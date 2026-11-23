@@ -208,6 +208,8 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 
 .s-port{background-color:#e8f3ec;color:#3f7a58}
 .s-rec{background-color:#e3eef8;color:#3c6a93}
+
+.falta{padding:14px 22px;background:#fbf0e6;color:#7a4a1a;font-size:13px;border-bottom:1px solid var(--line2)}
 </style>
 </head>
 <body>
@@ -490,7 +492,8 @@ function render(){
   $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();});
 
   const L=tab==="sel"?sel:more, off=tab==="sel"?0:sel.length;
-  $("list").innerHTML=L.length?L.map((d,i)=>row(d,off+i+1,tab==="more")).join(""):`<div class="empty">Sin emprendimientos.</div>`;
+  const falta=tab==="sel"&&sel.length<META?`<div class="falta"><b>Hay ${sel.length} de ${META}.</b> Ya no quedan más opciones disponibles en ${esc(site)}: las demás son servicios, trabajan bajo pedido, no pueden asistir o se marcaron como "No quedó". Para completar, usa <b>Agregar</b> o recupera uno con <b>↺</b> en "Otras opciones".</div>`:"";
+  $("list").innerHTML=falta+(L.length?L.map((d,i)=>row(d,off+i+1,tab==="more")).join(""):`<div class="empty">Sin emprendimientos.</div>`);
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
   $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>{const id=+a.dataset.wa;setR(id,"sent",true);if(S.r[id].st==="pend")setR(id,"st","port");setTimeout(render,250);}));
