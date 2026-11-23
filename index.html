@@ -243,13 +243,14 @@ const DEF = {
 
 ¡Felicitaciones! Tu emprendimiento {emprendimiento} fue preseleccionado para participar en la Feria de Emprendimiento TP 2026 | Misión Emprende. Este año la feria será diferente: se realizará únicamente en tu site, {site}. {fechas}
 
-En el PDF adjunto encontrarás los datos que ya tenemos de tu inscripción. Si algún dato no es correcto, déjanos saber por esta misma línea de correo.
+Estos son los datos que tenemos de tu inscripción:
+{datos}
 
-Para confirmar tu cupo, por favor responde este correo completando la siguiente información:
+Si algún dato no es correcto, déjanos saber respondiendo este correo.
+
+Para asegurar tu cupo, confírmanos tu participación y completa los datos que nos faltan respondiendo este mismo correo:
 
 {formulario}
-
-Recuerda adjuntar la cédula y el certificado de afiliación a la EPS de la persona que atenderá tu stand, en PDF.
 
 ¿Y si la feria coincide con tu turno? No te preocupes: {persona_apoyo} estará al frente de tu stand para que tu emprendimiento siga brillando mientras tú trabajas.
 {alimentos}
@@ -260,7 +261,7 @@ Saludos,`,
 
 ¡Tu emprendimiento *{emprendimiento}* fue preseleccionado para la Feria de Emprendimiento TP 2026 en {site}!
 
-Te enviamos un correo a {correo} con tus datos de inscripción para que los revises y nos confirmes tu asistencia y la de {persona_apoyo}. *Tienes plazo hasta el {plazo}.*
+Te enviamos un correo a {correo} con tus datos de inscripción para que nos confirmes tu participación y quién te acompañará en el stand. *Tienes plazo hasta el {plazo}.*
 
 Si necesitamos algo más, te escribimos por aquí. ¡Gracias!`,
  rwa:`Hola {nombre}, ¿cómo vas? Te escribe {firma}, de Emotions & Experiences de TP.
@@ -272,12 +273,12 @@ Te recordamos que aún no hemos recibido tu confirmación para la Feria de Empre
 
 Te escribimos para recordarte que aún no hemos recibido tu confirmación para la Feria de Emprendimiento TP 2026 | Misión Emprende con {emprendimiento}.
 
-Para asegurar tu cupo en {site}, por favor responde este correo antes del {plazo} con la información que te pedimos y los documentos de la persona que atenderá tu stand.
+Para asegurar tu cupo en {site}, por favor responde este correo antes del {plazo} confirmando tu participación y los datos de tu acompañante.
 
 Si ya no puedes participar, cuéntanos para darle el cupo a otro emprendimiento.
 
 Quedamos atentas. ¡Gracias!`};
-const VARS=["nombre","nombre_completo","emprendimiento","site","fechas","formulario","persona_apoyo","alimentos","plazo","firma","correo"];
+const VARS=["nombre","nombre_completo","emprendimiento","site","fechas","datos","formulario","persona_apoyo","alimentos","plazo","firma","correo"];
 const OLD_MAIL_MARK="Adjunto encontrarás un PDF con los datos que tenemos";
 
 /* ---------- state ---------- */
@@ -297,7 +298,7 @@ function R(d){
   return r;
 }
 const setR=(id,k,v)=>{S.r[id][k]=v;S.r[id].ts=now();save();};
-const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
+const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].mail&&/Recuerda adjuntar la c[ée]dula|\{pedido\}/.test(S.c[s].mail))S.c[s].mail=DEF.mail;if(S.c[s].rmail&&/documentos de la persona/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].wa&&/con tus datos de inscripción para que los revises/.test(S.c[s].wa))S.c[s].wa=DEF.wa;Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
 const setC=(s,k,v)=>{C(s)[k]=v;S.c[s].ts=now();save();};
 const setG=(k,v)=>{S.g[k]=v;S.g.ts=now();save();};
 const ORDER={A:0,B:1,C:2,D:3,E:4,X:5};
@@ -346,26 +347,24 @@ const mailerName=()=>({gmail:"Gmail",outlook:"Outlook",app:"tu correo"}[mailer()
 function vars(d){
   const c=C(d.site), r=R(d), ap=r.apoyo.trim(), f=c.fecha.trim();
   return {nombre:d.primer,nombre_completo:d.nombre,emprendimiento:nice(d.emp),site:d.site,
-    fechas:f?`Las fechas son ${f}.`:"Las fechas te las confirmaremos muy pronto.",
+    fechas:f?`Las fechas son ${f}.`:"Será durante las primeras semanas de diciembre y te estaremos avisando las fechas exactas.",
     confirmacion:ap?`Queremos confirmar tu asistencia y la de ${ap}, quien atenderá tu stand.`:`Queremos confirmar tu asistencia y saber quién atenderá tu stand, ya que en el formulario no registraste a una persona de apoyo.`,
     persona_apoyo:ap||"la persona que elijas",plazo:c.lim.trim(),firma:c.resp.trim(),correo:d.email,
     pedido:pedido(d).map((x,i)=>`${i+1}. ${x}`).join("\n"),
     formulario:formulario(d),
+    datos:datosTxt(d),
     alimentos:d.food?"\nComo tu emprendimiento es de alimentos, por lineamientos de SST los productos deben ir empacados y sellados, y tu participación queda sujeta a aprobación del site.\n":""};
 }
 const fill=(t,v)=>String(t||"").replace(/\{(\w+)\}/g,(m,k)=>k in v?v[k]:m).replace(/\n{3,}/g,"\n\n").trim();
 const subj=d=>fill(C(d.site).subj,vars(d));
-const FORM=[["camp","Campaña"],["hor","Horario laboral"],["apoyo","Persona que atenderá tu stand (nombre completo)"],["cc","Cédula de la persona de apoyo"],["atel","Celular de la persona de apoyo"],["paren","Parentesco"],["corr","Datos por corregir del PDF (si aplica)"]];
-function formulario(d){
-  const r=R(d), ap=r.apoyo.trim();
-  const pre={apoyo:ap, atel:r.atel||((ap&&ap===d.apoyo&&d.apoyoTel&&d.apoyoTel.replace(/\D/g,"")!==d.tel)?d.apoyoTel:""), paren:r.paren||((ap&&ap===d.apoyo&&d.rel)?d.rel.replace("Hermano/a","Hermano(a)").replace("Esposo/a","Esposo(a)"):"")};
-  return FORM.map(([k,l])=>`${l}: ${pre[k]||""}`.trimEnd()).join("\n");
-}
-function pedido(d){
-  const ap=R(d).apoyo.trim();
-  return ap?["Tu campaña y tu horario laboral.",`Cédula y certificado de afiliación a la EPS de ${ap}, en PDF.`]
-           :["Tu campaña y tu horario laboral.","Nombre completo, celular y parentesco de la persona que atenderá tu stand.","Cédula y certificado de afiliación a la EPS de esa persona, en PDF."];
-}
+const FORM=[["part","¿Confirmas tu participación? (Sí / No)"],["camp","Campaña"],["hor","Horario laboral"],["apoyo","Acompañante que atenderá tu stand (nombre completo)"],["atel","Celular del acompañante"],["paren","Parentesco"],["corr","Datos por corregir (si aplica)"]];
+const relTxt=s=>String(s||"").replace("Hermano/a","Hermano(a)").replace("Esposo/a","Esposo(a)");
+function apoyoPre(d){const r=R(d),ap=r.apoyo.trim();return {apoyo:ap,atel:r.atel||((ap&&ap===d.apoyo&&d.apoyoTel&&d.apoyoTel.replace(/\D/g,"")!==d.tel)?d.apoyoTel:""),paren:r.paren||((ap&&ap===d.apoyo&&d.rel)?relTxt(d.rel):"")};}
+function formulario(d){const pre=apoyoPre(d);return FORM.map(([k,l])=>`${l}: ${pre[k]||""}`.trimEnd()).join("\n");}
+function datosTxt(d){const p=apoyoPre(d);
+  return [`- Nombre: ${d.nombre}`,`- Celular: ${d.tel}`,`- Correo: ${d.email}`,`- Emprendimiento: ${nice(d.emp)}`,`- Categoría: ${d.sub}`,
+    p.apoyo?`- Acompañante registrado: ${p.apoyo}${p.atel?`, cel. ${p.atel}`:""}${p.paren?` (${p.paren.toLowerCase()})`:""}`:`- Acompañante registrado: no registraste a nadie`].join("\n");}
+function pedido(d){const ap=R(d).apoyo.trim();return ["Confirmar tu participación.","Tu campaña y tu horario laboral.",ap?`Confirmar si ${ap} te acompañará en el stand.`:"Nombre completo, celular y parentesco de quien te acompañará en el stand."];}
 const mailText=d=>R(d).custom||fill(C(d.site).mail,vars(d));
 const waText=d=>fill(C(d.site).wa,vars(d));
 const waURL=(d,txt)=>{let n=d.tel.replace(/\D/g,"");if(n.length===10)n="57"+n;return `https://wa.me/${n}?text=${encodeURIComponent(txt)}`;};
@@ -415,9 +414,8 @@ function buildPDF(d){
 }
 function downloadPDF(d){ try{buildPDF(d).save(pdfName(d));return true;}catch(e){toast("No se pudo crear el PDF");return false;} }
 function sendMail(d){
-  downloadPDF(d);
   if(R(d).st==="pend") setR(d.id,"st","env");
-  toast(`Se descargó la ficha PDF · adjúntala al correo en ${mailerName()}`,4500);
+  toast(`Correo listo en ${mailerName()} · revísalo y envíalo`,3500);
   setTimeout(render,300);
 }
 
@@ -476,7 +474,7 @@ function row(d,n,why){
   return `<div class="row" data-id="${d.id}">
    <div class="rk">${String(n).padStart(2,"0")}</div>
    <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:""}</div></div>
-   <div class="ap ${ap?"":"no"}"><small>Atiende el stand${r.docs?" · docs ✓":""}</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
+   <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
      ${r.st==="pend"||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
@@ -496,15 +494,13 @@ function openRow(id){
      <div class="blk"><h4>Estado</h4>${stSel(d,"big")}</div>
      <div class="blk"><h4>Respuesta del colaborador <button id="paste1">Pegar respuesta del correo</button></h4>
        <div class="g2"><div class="fl"><label>Campaña</label><input data-f="camp" value="${esc(r.camp)}"></div><div class="fl"><label>Horario laboral</label><input data-f="hor" value="${esc(r.hor)}"></div></div></div>
-     <div class="blk"><h4>Persona que atenderá el stand</h4>
+     <div class="blk"><h4>Acompañante que atenderá el stand</h4>
        <div class="fl" style="margin-bottom:10px"><label>Nombre completo</label><input data-f="apoyo" value="${esc(r.apoyo)}" placeholder="Por definir"></div>
-       <div class="g2" style="grid-template-columns:1fr 1fr 1fr"><div class="fl"><label>Cédula</label><input data-f="cc" value="${esc(r.cc)}"></div><div class="fl"><label>Celular</label><input data-f="atel" value="${esc(r.atel)}"></div><div class="fl"><label>Parentesco</label><input data-f="paren" value="${esc(r.paren)}"></div></div>
-       <label class="chk"><input type="checkbox" id="ddocs" ${r.docs?"checked":""}>Recibí la cédula y el certificado de EPS en PDF</label></div>
+       <div class="g2"><div class="fl"><label>Celular</label><input data-f="atel" value="${esc(r.atel)}"></div><div class="fl"><label>Parentesco</label><input data-f="paren" value="${esc(r.paren)}"></div></div></div>
      <div class="blk"><h4>Correcciones solicitadas</h4><div class="fl"><textarea data-f="corr" rows="2" placeholder="Ninguna">${esc(r.corr)}</textarea></div></div>
-     <div class="blk"><h4>Ficha PDF <button id="pdfdl">Descargar</button></h4><iframe class="tframe" id="pdfv" style="height:440px;background:#fff"></iframe></div>
      <div class="blk"><h4>Correo <button id="restore" style="${r.custom?"":"display:none"}">Volver a la plantilla</button></h4>
        <div class="fl"><textarea class="mail" id="dmail">${esc(mailText(d))}</textarea></div>
-       <div class="hint"><span><b>Así se envía:</b> toca <b>Enviar correo</b>. Se descarga la ficha PDF y se abre ${mailerName()} con el correo ya escrito. Solo adjunta el PDF y envía. Si editas el texto aquí, cambia solo para esta persona.</span></div></div>
+       <div class="hint"><span><b>Así se envía:</b> toca <b>Enviar correo</b> y se abre ${mailerName()} con el correo ya escrito, con los datos que tenemos y el formulario para responder. Si editas el texto aquí, cambia solo para esta persona.</span></div></div>
      <div class="blk"><h4>¿No ha respondido?</h4><div class="rem">
        <a class="btn" id="rwa" target="_blank" rel="noopener">${IC.wa}Recordar por WhatsApp</a>
        <a class="btn" id="rmail" target="_blank" rel="noopener">${IC.bell}Recordar por correo</a></div>
@@ -516,11 +512,8 @@ function openRow(id){
     $("rwa").href=waURL(d,fill(c.rwa,v));$("rmail").href=threadURL(d)||compose(d.email,subj(d),fill(c.rmail,v));};
   ref();
   $("dr").querySelector("select[data-st]").onchange=e=>setR(id,"st",e.target.value);
-  $("ddocs").onchange=e=>setR(id,"docs",e.target.checked);
   $("paste1").onclick=()=>openPaste(id);
-  let pdfT=null; const pdfPrev=()=>{clearTimeout(pdfT);pdfT=setTimeout(()=>{try{$("pdfv").src=buildPDF(d).output("bloburl")+"#toolbar=0&view=FitH";}catch(e){}},250);};
-  pdfPrev(); $("pdfdl").onclick=()=>downloadPDF(d);
-  $("dr").querySelectorAll("[data-f]").forEach(i=>i.oninput=()=>{setR(id,i.dataset.f,i.value);if(!S.r[id].custom)$("dmail").value=mailText(d);ref();pdfPrev();});
+  $("dr").querySelectorAll("[data-f]").forEach(i=>i.oninput=()=>{setR(id,i.dataset.f,i.value);if(!S.r[id].custom)$("dmail").value=mailText(d);ref();});
   $("dmail").oninput=e=>{setR(id,"custom",e.target.value);$("restore").style.display="";ref();};
   $("restore").onclick=()=>{setR(id,"custom","");$("dmail").value=mailText(d);$("restore").style.display="none";ref();};
   if($("dsend"))$("dsend").onclick=()=>sendMail(d);
@@ -531,7 +524,7 @@ function openRow(id){
 }
 
 /* ---------- cargar respuesta ---------- */
-const PATS=[["atel",/celular/i],["cc",/c[ée]dula/i],["paren",/parentesco/i],["corr",/corregir|correcci/i],["camp",/campa[ñn]a/i],["hor",/horario/i],["apoyo",/persona que atender|nombre completo|atender[aá] tu stand/i]];
+const PATS=[["part",/confirmas|participaci/i],["atel",/celular/i],["paren",/parentesco/i],["corr",/corregir|correcci/i],["camp",/campa[ñn]a/i],["hor",/horario/i],["apoyo",/acompa[ñn]ante|persona que atender|nombre completo|atender[aá] tu stand/i]];
 function parseReply(txt){
   const out={};
   txt.split(/\r?\n/).forEach(line=>{
@@ -557,15 +550,14 @@ function openPaste(preId){
        <div class="note" id="pdet" style="margin-top:6px"></div></div>
      <div class="blk"><h4>Datos encontrados</h4>
        <div class="g2"><div class="fl"><label>Campaña</label><input id="p_camp"></div><div class="fl"><label>Horario laboral</label><input id="p_hor"></div></div>
-       <div class="fl" style="margin:10px 0"><label>Persona que atenderá el stand</label><input id="p_apoyo"></div>
-       <div class="g2" style="grid-template-columns:1fr 1fr 1fr"><div class="fl"><label>Cédula</label><input id="p_cc"></div><div class="fl"><label>Celular</label><input id="p_atel"></div><div class="fl"><label>Parentesco</label><input id="p_paren"></div></div>
+       <div class="fl" style="margin:10px 0"><label>Acompañante que atenderá el stand</label><input id="p_apoyo"></div>
+       <div class="g2"><div class="fl"><label>Celular</label><input id="p_atel"></div><div class="fl"><label>Parentesco</label><input id="p_paren"></div></div>
        <div class="fl" style="margin-top:10px"><label>Correcciones solicitadas</label><input id="p_corr" placeholder="Ninguna"></div>
-       <label class="chk"><input type="checkbox" id="p_docs">Adjuntó la cédula y el certificado de EPS en PDF</label>
-       <label class="chk"><input type="checkbox" id="p_conf" checked>Marcar como confirmado</label></div>
+       <div class="fl" style="margin-top:10px"><label>¿Confirma su participación?</label><select id="p_part" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;background:#fff"><option value="si">Sí, participa · marcar Confirmado</option><option value="no">No participa</option><option value="">Aún no lo dice</option></select></div></div>
    </div>
    <div class="df"><button class="btn" id="pcancel">Cancelar</button><button class="btn wine" id="psave">Guardar respuesta</button></div>`);
-  const keys=["camp","hor","apoyo","cc","atel","paren","corr"];
-  const fillFrom=id=>{const d=DATA.find(x=>x.id==id); if(!d) return; const r=R(d); keys.forEach(k=>{if(!$("p_"+k).dataset.got)$("p_"+k).value=r[k]||"";}); $("p_docs").checked=$("p_docs").checked||r.docs;};
+  const keys=["camp","hor","apoyo","atel","paren","corr"];
+  const fillFrom=id=>{const d=DATA.find(x=>x.id==id); if(!d) return; const r=R(d); keys.forEach(k=>{if(!$("p_"+k).dataset.got)$("p_"+k).value=r[k]||"";});};
   if(preId) fillFrom(preId);
   $("psel").onchange=e=>{keys.forEach(k=>delete $("p_"+k).dataset.got);fillFrom(e.target.value);};
   $("ptxt").oninput=e=>{
@@ -575,12 +567,12 @@ function openPaste(preId){
     else if($("pdet").dataset.det) det=$("pdet").dataset.det;
     $("pdet").dataset.det=det;
     let n=0; keys.forEach(k=>{if(got[k]){$("p_"+k).value=got[k];$("p_"+k).dataset.got=1;n++;}});
-    if(/\.pdf|adjunt|eps/i.test(txt)) $("p_docs").checked=true;
+    if(got.part){$("p_part").value=/^\s*no\b/i.test(got.part)?"no":/^\s*(s[ií]|claro|confirmo|por supuesto)/i.test(got.part)?"si":$("p_part").value;n++;}
     $("pdet").textContent=det+`${n} datos encontrados. Revísalos antes de guardar.`;
   };
   $("pcancel").onclick=close;
   $("psave").onclick=()=>{const id=+$("psel").value; if(!id){toast("Selecciona el emprendimiento");return;}
-    const r=S.r[id]||R(DATA.find(x=>x.id===id)); keys.forEach(k=>r[k]=$("p_"+k).value.trim()); r.docs=$("p_docs").checked; if($("p_conf").checked) r.st="conf"; r.ts=now(); save();
+    const r=S.r[id]||R(DATA.find(x=>x.id===id)); keys.forEach(k=>r[k]=$("p_"+k).value.trim()); const pv=$("p_part").value; if(pv==="si") r.st="conf"; else if(pv==="no") r.st="decl"; r.ts=now(); save();
     const d=DATA.find(x=>x.id===id); if(d.site!==site){site=d.site;S.site=site;persist();}
     toast("Respuesta guardada"); openRow(id);};
 }
@@ -614,7 +606,7 @@ $("tplBtn").onclick=()=>{
 /* ---------- Isa (per site) ---------- */
 const siteConf=s=>lists(s).all.filter(d=>R(d).st==="conf");
 function excelSite(s){
-  const rows=siteConf(s).map(d=>{const r=R(d);return {"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Celular":d.tel,"Correo":d.email,"Campaña":r.camp,"Horario":r.hor,"Persona que atiende el stand":r.apoyo,"Cédula persona de apoyo":r.cc,"Celular persona de apoyo":r.atel,"Parentesco":r.paren,"Documentos (cédula y EPS)":r.docs?"Recibidos":"Pendientes","Correcciones":r.corr};});
+  const rows=siteConf(s).map(d=>{const r=R(d);return {"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Celular":d.tel,"Correo":d.email,"Campaña":r.camp,"Horario":r.hor,"Acompañante (atiende el stand)":r.apoyo,"Celular acompañante":r.atel,"Parentesco":r.paren,"Correcciones":r.corr};});
   if(!rows.length){toast(`Aún no hay confirmados en ${s}`);return;}
   const name=`Feria_TP_2026_Confirmados_${s.replace(/\s/g,"")}`;
   if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||"").length))+2}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,s);XLSX.writeFile(wb,name+".xlsx");}
@@ -666,9 +658,9 @@ $("pasteBtn").onclick=()=>openPaste(null);
 let syncT=null, syncing=false;
 function setSync(cls,txt){const b=$("syncBtn");b.className="sync "+cls;$("syncTxt").textContent=txt;}
 function table(){
-  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Campaña","Horario","Persona que atiende el stand","Cédula apoyo","Celular apoyo","Parentesco","Documentos","Correcciones","Estado","WhatsApp enviado"];
+  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Campaña","Horario","Acompañante (atiende el stand)","Celular acompañante","Parentesco","Correcciones","Estado","WhatsApp enviado"];
   const rows=[H];
-  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,r.camp,r.hor,r.apoyo,r.cc,r.atel,r.paren,r.docs?"Recibidos":"",r.corr,ST[r.st],r.sent?"Sí":""]);});});
+  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,r.camp,r.hor,r.apoyo,r.atel,r.paren,r.corr,ST[r.st],r.sent?"Sí":""]);});});
   return rows;
 }
 function merge(resp){
