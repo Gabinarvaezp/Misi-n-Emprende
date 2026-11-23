@@ -210,6 +210,12 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .s-rec{background-color:#e3eef8;color:#3c6a93}
 
 .falta{padding:14px 22px;background:#fbf0e6;color:#7a4a1a;font-size:13px;border-bottom:1px solid var(--line2)}
+
+.ask{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--paper);border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(43,29,26,.45);border-radius:18px;padding:12px 12px 12px 18px;display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.2s;z-index:45;font-size:14px;max-width:calc(100% - 24px)}
+.ask.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.sent-l{margin-top:10px;font-size:12.5px;color:var(--mute)}
+.sent-l b{color:var(--ink2)}
+.lk{border:0;background:none;padding:0;color:var(--wine);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
@@ -240,6 +246,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 </div>
 <div class="scrim" id="scrim"></div>
 <aside class="dr" id="dr"></aside>
+<div class="ask" id="ask"></div>
 <div class="toast" id="toast"></div>
 <script>
 const BKEY = "mision-emprende-base";
@@ -445,11 +452,18 @@ function buildPDF(d){
 function downloadPDF(d){ try{buildPDF(d).save(pdfName(d));return true;}catch(e){toast("No se pudo crear el PDF");return false;} }
 const mailSent=r=>!!r.msent||["env","nores"].includes(r.st);
 const waSent=r=>!!r.sent;
-function sendMail(d){
-  setR(d.id,"msent",true);
-  if(["pend","port","rec"].includes(R(d).st)) setR(d.id,"st","env");
-  toast(`Correo listo en ${mailerName()} · revísalo y envíalo`,3500);
-  setTimeout(render,300);
+function sendMail(d){ askSent(d,"mail"); }
+function markSent(d,kind){
+  if(kind==="mail"){ setR(d.id,"msent",true); if(["pend","port","rec"].includes(R(d).st)) setR(d.id,"st","env"); }
+  else { setR(d.id,"sent",true); if(R(d).st==="pend") setR(d.id,"st","port"); }
+  render();
+}
+function askSent(d,kind){
+  const q=$("ask"); const what=kind==="mail"?"el correo":"el WhatsApp";
+  q.innerHTML=`<span>¿Enviaste ${what} a <b>${esc(nice(d.emp))}</b>?</span><button class="btn wine" id="askY">Sí, lo envié</button><button class="btn" id="askN">No</button>`;
+  q.classList.add("on");
+  $("askY").onclick=()=>{q.classList.remove("on");markSent(d,kind);toast(kind==="mail"?"Marcado como correo enviado":"Marcado como WhatsApp enviado");};
+  $("askN").onclick=()=>q.classList.remove("on");
 }
 
 /* ---------- render ---------- */
@@ -499,7 +513,7 @@ function render(){
   $("list").innerHTML=falta+(L.length?L.map((d,i)=>row(d,off+i+1,tab==="more")).join(""):`<div class="empty">Sin emprendimientos.</div>`);
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
-  $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>{const id=+a.dataset.wa;setR(id,"sent",true);if(S.r[id].st==="pend")setR(id,"st","port");setTimeout(render,250);}));
+  $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>askSent(DATA.find(x=>x.id==a.dataset.wa),"wa")));
   $("list").querySelectorAll("[data-nq]").forEach(b=>b.onclick=()=>{const id=+b.dataset.nq;const d=DATA.find(x=>x.id===id);setR(id,"st","nq");render();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);});
   $("list").querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{setR(+b.dataset.back,"st","pend");render();toast("Lo volviste a tener en cuenta");});
   $("list").querySelectorAll("select[data-st]").forEach(s=>s.onchange=()=>{setR(+s.dataset.st,"st",s.value);render();});
@@ -531,7 +545,8 @@ function openRow(id){
      <div class="blk about"><h4>Sobre el emprendimiento ${d.red?`<a href="${esc(d.red)}" target="_blank" rel="noopener">${/instagram/.test(d.red)?"Ver Instagram":/facebook/.test(d.red)?"Ver Facebook":"Ver página"} ↗</a>`:""}</h4>
        <p>${esc(d.desc?d.desc.charAt(0).toUpperCase()+d.desc.slice(1):"Sin descripción.")}</p>
        ${d.nota?`<div class="nota">${esc(d.nota)}</div>`:""}<div class="meta-l">${esc(d.sub)}${d.redtxt?` · ${esc(d.redtxt)}`:" · Sin redes registradas"}</div></div>
-     <div class="blk"><h4>Estado</h4>${stSel(d,"big")}</div>
+     <div class="blk"><h4>Estado</h4>${stSel(d,"big")}
+       <div class="sent-l">WhatsApp: <b>${r.sent?"enviado":"no enviado"}</b>${r.sent?` · <button class="lk" id="unwa">desmarcar</button>`:""} &nbsp;·&nbsp; Correo: <b>${mailSent(r)?"enviado":"no enviado"}</b>${mailSent(r)?` · <button class="lk" id="unmail">desmarcar</button>`:""}</div></div>
      <div class="blk"><h4>Respuesta del colaborador <button id="paste1">Pegar respuesta del correo</button></h4>
        <div class="fl" style="margin-bottom:10px"><label>¿Tendrá productos listos para exhibir?</label><input data-f="stock" value="${esc(r.stock||"")}" placeholder="Por confirmar"></div>
        <div class="g2"><div class="fl"><label>Campaña</label><input data-f="camp" value="${esc(r.camp)}"></div><div class="fl"><label>Horario laboral</label><input data-f="hor" value="${esc(r.hor)}"></div></div></div>
@@ -560,10 +575,12 @@ function openRow(id){
   $("dmail").oninput=e=>{setR(id,"custom",e.target.value);$("restore").style.display="";ref();};
   $("restore").onclick=()=>{setR(id,"custom","");$("dmail").value=mailText(d);$("restore").style.display="none";ref();};
   if($("dsend"))$("dsend").onclick=()=>sendMail(d);
+  if($("unwa"))$("unwa").onclick=()=>{setR(id,"sent",false);if(S.r[id].st==="port")setR(id,"st","pend");openRow(id);};
+  if($("unmail"))$("unmail").onclick=()=>{setR(id,"msent",false);if(["env","nores"].includes(S.r[id].st))setR(id,"st","pend");openRow(id);};
   if($("dnq"))$("dnq").onclick=()=>{setR(id,"st","nq");close();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);};
   if($("dback"))$("dback").onclick=()=>{setR(id,"st","pend");close();toast("Lo volviste a tener en cuenta");};
   if($("delman"))$("delman").onclick=()=>{if($("delman").dataset.ok){confirmDel(id);}else{$("delman").dataset.ok=1;$("delman").textContent="Toca otra vez para confirmar";}};
-  $("dwa").onclick=()=>{setR(id,"sent",true);if(S.r[id].st==="pend")setR(id,"st","port");};
+  $("dwa").onclick=()=>askSent(d,"wa");
   $("rwa").onclick=()=>{if(R(d).st==="env")setR(id,"st","nores");toast("Recordatorio listo");};
   $("rmail").onclick=()=>{copyText(fill(C(d.site).rmail,vars(d)));if(R(d).st==="env")setR(id,"st","nores");
     toast(threadURL(d)?"Recordatorio copiado · abre la conversación, toca Responder y pega con Ctrl+V":"Recordatorio listo",6000);};
@@ -767,7 +784,7 @@ async function pull(){
   diag="";
   try{
     if(j.error==="clave"||j.auth!==true){claveMala=true;viejo=j.auth!==true&&j.error!=="clave";S.ok="";persist();setSync("err",viejo?"Apps Script sin actualizar":"Clave incorrecta");render();return false;}
-    claveMala=false;viejo=false;S.ok=CLAVE;merge(j);setSync("on","Guardado en Drive");if(!$("dr").classList.contains("on"))render();return true;}
+    claveMala=false;viejo=false;S.ok=CLAVE;merge(j);limpieza1();setSync("on","Guardado en Drive");if(!$("dr").classList.contains("on"))render();return true;}
   catch(e){setSync("err","Sin conexión con Drive");return false;}
 }
 async function push(){
@@ -804,6 +821,14 @@ $("syncBtn").onclick=()=>{
 };
 
 let tt=null;
+function limpieza1(){
+  if(S.g.limpieza1) return;
+  Object.keys(S.r).forEach(k=>{const r=S.r[k]; if(!r) return; let ch=false;
+    if(r.sent){r.sent=false;ch=true;} if(r.msent){r.msent=false;ch=true;}
+    if(["env","port","nores"].includes(r.st)){r.st="pend";ch=true;}
+    if(ch) r.ts=now();});
+  S.g.limpieza1=true; S.g.ts=now(); save();
+}
 function toast(t,ms=1800){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),ms);}
 render();
 if(S.g.url&&CLAVE){pull();setInterval(()=>{if(!syncing&&!$("dr").classList.contains("on"))pull();},45000);window.addEventListener("focus",()=>{if(!$("dr").classList.contains("on"))pull();});}
