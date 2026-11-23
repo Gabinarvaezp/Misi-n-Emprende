@@ -443,7 +443,10 @@ function buildPDF(d){
   return doc;
 }
 function downloadPDF(d){ try{buildPDF(d).save(pdfName(d));return true;}catch(e){toast("No se pudo crear el PDF");return false;} }
+const mailSent=r=>!!r.msent||["env","nores"].includes(r.st);
+const waSent=r=>!!r.sent;
 function sendMail(d){
+  setR(d.id,"msent",true);
   if(["pend","port","rec"].includes(R(d).st)) setR(d.id,"st","env");
   toast(`Correo listo en ${mailerName()} · revísalo y envíalo`,3500);
   setTimeout(render,300);
@@ -487,7 +490,7 @@ function render(){
   const cnt=s=>all.filter(d=>R(d).st===s).length;
   $("h1").innerHTML=`Emprendimientos <em>${site}</em>`;
   $("sub").textContent=`${all.length} preinscritos · ${sel.length} seleccionados · envía ${c.resp} · plazo ${c.lim}${c.fecha?` · feria ${c.fecha}`:""}`;
-  $("stats").innerHTML=`<div class="stat"><span>Enviados</span><b>${all.filter(d=>R(d).st!=="pend").length}</b></div><div class="stat"><span>Confirmados</span><b>${cnt("conf")}<small> / ${META}</small></b></div><div class="stat"><span>Sin respuesta</span><b>${cnt("nores")}</b></div>`;
+  $("stats").innerHTML=`<div class="stat"><span>WhatsApp</span><b>${all.filter(d=>waSent(R(d))).length}</b></div><div class="stat"><span>Correos</span><b>${all.filter(d=>mailSent(R(d))).length}</b></div><div class="stat"><span>Confirmados</span><b>${cnt("conf")}<small> / ${META}</small></b></div><div class="stat"><span>Sin respuesta</span><b>${cnt("nores")}</b></div>`;
   $("seg").innerHTML=`<button class="${tab==="sel"?"on":""}" data-t="sel">Seleccionados<em>${sel.length}</em></button><button class="${tab==="more"?"on":""}" data-t="more">Otras opciones<em>${more.length}</em></button>`;
   $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();});
 
@@ -510,7 +513,7 @@ function row(d,n,why){
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
-     ${["pend","port","rec"].includes(r.st)||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
+     ${!mailSent(r)||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
      <a class="ic wa ${r.sent?"done":""}" href="${waURL(d,waText(d))}" target="_blank" rel="noopener" data-wa="${d.id}" title="Pedir portafolio por WhatsApp">${IC.wa}</a>
      ${!why&&!FUERA.includes(r.st)?`<button class="ic nq" data-nq="${d.id}" title="No quedó · sacarlo de los seleccionados">${IC.x}</button>`:FUERA.includes(r.st)?`<button class="ic" data-back="${d.id}" title="Volver a tenerlo en cuenta">↺</button>`:""}
    </div></div>`;
@@ -546,7 +549,7 @@ function openRow(id){
        <a class="btn" id="rmail" target="_blank" rel="noopener">${IC.bell}Recordar por correo</a></div>
        <div class="note" style="margin-top:8px">El recordatorio por correo se responde dentro de la misma conversación: se copia el texto, se abre el hilo con este emprendimiento y solo tocas Responder y pegas.</div></div>
    </div>
-   <div class="df"><a class="btn" id="dwa" target="_blank" rel="noopener">${IC.wa}Pedir portafolio</a>${["pend","port","rec"].includes(r.st)||!threadURL(d)?`<a class="btn wine" id="dsend" ${tgt()}>${IC.mail}Enviar correo</a>`:`<a class="btn wine" id="dthread" href="${threadURL(d)}" target="_blank" rel="noopener">${IC.mail}Ver conversación</a>`}</div>`);
+   <div class="df"><a class="btn" id="dwa" target="_blank" rel="noopener">${IC.wa}Pedir portafolio</a>${!mailSent(r)||!threadURL(d)?`<a class="btn wine" id="dsend" ${tgt()}>${IC.mail}Enviar correo</a>`:`<a class="btn wine" id="dthread" href="${threadURL(d)}" target="_blank" rel="noopener">${IC.mail}Ver conversación</a>`}</div>`);
   const ref=()=>{const c=C(d.site),v=vars(d);
     if($("dsend"))$("dsend").href=compose(d.email,subj(d),mailText(d));$("dwa").href=waURL(d,waText(d));
     $("rwa").href=waURL(d,fill(c.rwa,v));$("rmail").href=threadURL(d)||compose(d.email,subj(d),fill(c.rmail,v));};
