@@ -241,7 +241,8 @@ const BKEY = "mision-emprende-base";
 let BASE0 = []; try{BASE0=JSON.parse(localStorage.getItem(BKEY))||[];}catch(e){}
 let DATA = BASE0.slice();
 let pendingBase = null;
-const DRIVE_URL = "https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec";
+const DRIVE_URL = "https://script.google.com/macros/s/AKfycbx7bq0gzr7APLHcB9paPd2UdX-0a6FRDmKAxNAfdSJVZAbL-vZaeII5n0gFx8dsuBmx/exec";
+const OLD_URLS = ["https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec"];
 const CKEY = "mision-emprende-clave";
 let CLAVE = ""; try{CLAVE=localStorage.getItem(CKEY)||"";}catch(e){}
 let claveMala = false, viejo = false;
@@ -303,7 +304,7 @@ const OLD_MAIL_MARK="Adjunto encontrarás un PDF con los datos que tenemos";
 
 /* ---------- state ---------- */
 let S={}; try{S=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){}
-S.r=S.r||{}; S.c=S.c||{}; S.g=S.g||{ts:0,isa:"",url:""}; if(!S.g.url) S.g.url=DRIVE_URL;
+S.r=S.r||{}; S.c=S.c||{}; S.g=S.g||{ts:0,isa:"",url:""}; if(!S.g.url||OLD_URLS.includes(S.g.url)) S.g.url=DRIVE_URL;
 rebuild();
 let site=S.site||"G8", tab="sel";
 const now=()=>Date.now();
