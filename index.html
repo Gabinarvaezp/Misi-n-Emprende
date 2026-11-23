@@ -163,7 +163,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .s-conf{background-color:var(--okbg);color:var(--ok)}
 .s-nores{background-color:#fbe9df;color:#b0623a}
 .s-decl{background-color:#efe9ee;color:#7d6b78}
-@media(min-width:901px){.row{grid-template-columns:44px minmax(0,1.6fr) minmax(0,1fr) 150px 200px}}
+@media(min-width:901px){.row{grid-template-columns:44px minmax(0,1.6fr) minmax(0,1fr) 150px 240px}.acts .ic{flex:none}}
 .preview{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#f8f4ef}
 .preview .pv{zoom:.78;outline:none}
 .preview .pv[contenteditable]:focus{box-shadow:inset 0 0 0 2px var(--t)}
@@ -200,6 +200,11 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .about .meta-l{margin-top:10px;font-size:12px;color:var(--mute)}
 
 .about .nota{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--warn);background:#fbf0e6;border-radius:10px;padding:8px 12px}
+
+.sel{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;background:#fff;color:var(--ink);outline:none}
+
+.ic.nq:hover{color:var(--wine);border-color:#e3c3c9;background:#fbf0f1}
+.s-nq{background-color:#efe9ee;color:#7d6b78}
 </style>
 </head>
 <body>
@@ -221,6 +226,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
   <section class="bar2">
     <div class="seg" id="seg"></div>
     <span class="sp"></span>
+    <button class="btn" id="addBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar</button>
     <button class="btn" id="pasteBtn"><svg class="i" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg>Cargar respuesta</button>
     <button class="btn" id="tplBtn"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>Plantilla y fechas</button>
     <button class="btn wine" id="isaBtn"><svg class="i" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>Reportar a Isa</button>
@@ -232,20 +238,23 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 <div class="toast" id="toast"></div>
 <script>
 const BKEY = "mision-emprende-base";
-let DATA = []; try{DATA=JSON.parse(localStorage.getItem(BKEY))||[];}catch(e){}
+let BASE0 = []; try{BASE0=JSON.parse(localStorage.getItem(BKEY))||[];}catch(e){}
+let DATA = BASE0.slice();
 let pendingBase = null;
 const DRIVE_URL = "https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec";
 const CKEY = "mision-emprende-clave";
 let CLAVE = ""; try{CLAVE=localStorage.getItem(CKEY)||"";}catch(e){}
 let claveMala = false;
-function setBase(arr){DATA=arr;try{localStorage.setItem(BKEY,JSON.stringify(arr));}catch(e){}}
+function setBase(arr){BASE0=arr;try{localStorage.setItem(BKEY,JSON.stringify(arr));}catch(e){}rebuild();}
+function rebuild(){const extra=(typeof S!=="undefined"&&S.r)?Object.values(S.r).filter(x=>x&&x.nuevo&&!x.nuevo.borrado).map(x=>x.nuevo):[];DATA=BASE0.concat(extra);}
 const APPS_SCRIPT = "/**\n * Misión Emprende · Feria de Emprendimiento TP 2026\n * Respaldo en Google Drive para la app de emprendimientos.\n *\n * Cómo instalarlo:\n * 1. Abre tu Google Sheet > Extensiones > Apps Script.\n * 2. Borra lo que aparece y pega este código. Guarda.\n * 3. Implementar > Nueva implementación > Aplicación web.\n *    Ejecutar como: Yo. Quién tiene acceso: Cualquier persona.\n * 4. Si cambias el código: Implementar > Administrar implementaciones >\n *    lápiz > Versión: Nueva versión > Implementar (la URL no cambia).\n */\nconst HOJA_SEGUIMIENTO = 'Seguimiento';\nconst HOJA_ESTADO = '_estado';\nconst HOJA_BASE = 'Base';\nconst HOJA_CONFIG = '_config';\nconst COLUMNAS = ['id','site','tier','score','emp','sub','food','nombre','primer','tel','email','apoyo','apoyoTel','rel','desc'];\nconst TROZO = 40000;\n\nfunction doGet(e) {\n  if (!autorizado_(e && e.parameter && e.parameter.k)) return salida_({ error: 'clave' });\n  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerBase_() });\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const entrada = JSON.parse(e.postData.contents || '{}');\n    if (!autorizado_(entrada.k)) return salida_({ error: 'clave' });\n    if (entrada.base && entrada.base.length) escribirBase_(entrada.base);\n    const combinado = combinar_(leerJSON_(HOJA_ESTADO, vacio_()), entrada.state || {});\n    guardarJSON_(HOJA_ESTADO, combinado);\n    if (entrada.table && entrada.table.length) escribirTabla_(entrada.table);\n    return salida_({ state: combinado, base: leerBase_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction vacio_() { return { r: {}, c: {}, g: {} }; }\n\n// La clave del equipo vive en la hoja oculta _config (celda B1), nunca en GitHub.\nfunction autorizado_(k) {\n  const hoja = libro_().getSheetByName(HOJA_CONFIG);\n  const clave = hoja ? String(hoja.getRange('B1').getValue()).trim() : '';\n  return !!clave && String(k || '').trim().toUpperCase() === clave.toUpperCase();\n}\n\n// La hoja \"Base\" tiene un emprendimiento por fila; se puede editar a mano.\nfunction leerBase_() {\n  const hoja = libro_().getSheetByName(HOJA_BASE);\n  if (!hoja || hoja.getLastRow() < 2) return [];\n  const filas = hoja.getDataRange().getValues();\n  const cab = filas.shift().map(String);\n  return filas.filter(f => String(f[0]).trim() !== '').map(f => {\n    const o = {};\n    cab.forEach((c, i) => {\n      const v = f[i];\n      if (c === 'id' || c === 'score') o[c] = Number(v) || 0;\n      else if (c === 'food') o[c] = v === true || String(v).toUpperCase() === 'SI';\n      else o[c] = v === null || v === undefined ? '' : String(v);\n    });\n    return o;\n  });\n}\n\nfunction escribirBase_(lista) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(HOJA_BASE) || libro.insertSheet(HOJA_BASE);\n  const filas = [COLUMNAS].concat(lista.map(o => COLUMNAS.map(c => c === 'food' ? (o[c] ? 'SI' : '') : (o[c] === undefined ? '' : o[c]))));\n  hoja.clearContents();\n  hoja.getRange(1, 1, filas.length, COLUMNAS.length).setNumberFormat('@').setValues(filas.map(f => f.map(String)));\n}\n\nfunction leerJSON_(nombre, porDefecto) {\n  const hoja = libro_().getSheetByName(nombre);\n  if (!hoja || hoja.getLastRow() === 0) return porDefecto;\n  const texto = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues()\n    .map(f => String(f[0]).replace(/^~/, '')).join('');\n  return texto ? JSON.parse(texto) : porDefecto;\n}\n\nfunction guardarJSON_(nombre, obj) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(nombre) || libro.insertSheet(nombre);\n  const texto = JSON.stringify(obj);\n  const filas = [];\n  for (let i = 0; i < texto.length; i += TROZO) filas.push(['~' + texto.slice(i, i + TROZO)]);\n  hoja.clear();\n  hoja.getRange(1, 1, filas.length, 1).setNumberFormat('@').setValues(filas);\n  if (!hoja.isSheetHidden()) hoja.hideSheet();\n}\n\nfunction escribirTabla_(filas) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(HOJA_SEGUIMIENTO) || libro.insertSheet(HOJA_SEGUIMIENTO, 0);\n  hoja.clearContents();\n  hoja.getRange(1, 1, filas.length, filas[0].length).setNumberFormat('@').setValues(filas);\n  hoja.getRange(1, 1, 1, filas[0].length).setFontWeight('bold').setBackground('#f3e9e1');\n  hoja.setFrozenRows(1);\n}\n\nfunction combinar_(a, b) {\n  const elegir = (x, y) => {\n    const o = Object.assign({}, x || {});\n    Object.keys(y || {}).forEach(k => {\n      if (!o[k] || (y[k].ts || 0) > (o[k].ts || 0)) o[k] = y[k];\n    });\n    return o;\n  };\n  const g = (b.g && (b.g.ts || 0) > ((a.g || {}).ts || 0)) ? b.g : (a.g || {});\n  return { r: elegir(a.r, b.r), c: elegir(a.c, b.c), g: g };\n}\n\nfunction libro_() { return SpreadsheetApp.getActiveSpreadsheet(); }\n\nfunction salida_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
 const SITES = ["G8","Torre C","BTS 0"];
 const THEME = {"G8":["#f5dde1","#b0556a","#fbf0f1"],"Torre C":["#e6def3","#7a5ea8","#f4f0fa"],"BTS 0":["#f6eac0","#9c7a17","#fbf6e3"]};
 const RESP = {"G8":"Gabriela Narváez","Torre C":"Nicolly Aldana","BTS 0":"Asley Martinez"};
 const META = 10;
 const KEY = "mision-emprende-v8";
-const ST = {pend:"Pendiente",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa"};
+const ST = {pend:"Pendiente",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa",nq:"No quedó"};
+const FUERA = ["decl","nq"];
 const DEF = {
  subj:"Feria de Emprendimiento TP 2026 | {emprendimiento} fue preseleccionado",
  mail:`Hola {nombre},
@@ -293,6 +302,7 @@ const OLD_MAIL_MARK="Adjunto encontrarás un PDF con los datos que tenemos";
 /* ---------- state ---------- */
 let S={}; try{S=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){}
 S.r=S.r||{}; S.c=S.c||{}; S.g=S.g||{ts:0,isa:"",url:""}; if(!S.g.url) S.g.url=DRIVE_URL;
+rebuild();
 let site=S.site||"G8", tab="sel";
 const now=()=>Date.now();
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
@@ -323,7 +333,7 @@ const IC={
 
 function lists(s){
   const all=DATA.filter(d=>d.site===s).sort((a,b)=>ORDER[a.tier]-ORDER[b.tier]||b.score-a.score);
-  const sel=all.filter(d=>d.tier!=="X").slice(0,META);
+  const sel=all.filter(d=>d.tier!=="X"&&!FUERA.includes(R(d).st)).slice(0,META);
   return {sel,more:all.filter(d=>!sel.includes(d)),all};
 }
 
@@ -356,7 +366,7 @@ const mailerName=()=>({gmail:"Gmail",outlook:"Outlook",app:"tu correo"}[mailer()
 function vars(d){
   const c=C(d.site), r=R(d), ap=r.apoyo.trim(), f=c.fecha.trim();
   return {nombre:d.primer,nombre_completo:d.nombre,emprendimiento:nice(d.emp),site:d.site,
-    fechas:f?`Las fechas son ${f}.`:"La feria se realizará en las primeras semanas de diciembre y nosotros te enviaremos la fecha exacta.",
+    fechas:f?`Las fechas son ${f}.`:"La feria se realizará en las primeras semanas de diciembre, probablemente durante 1 o 2 días, y nosotros te enviaremos la fecha exacta.",
     confirmacion:ap?`Queremos confirmar tu asistencia y la de ${ap}, quien atenderá tu stand.`:`Queremos confirmar tu asistencia y saber quién atenderá tu stand, ya que en el formulario no registraste a una persona de apoyo.`,
     persona_apoyo:ap||"la persona que elijas",plazo:c.lim.trim(),firma:c.resp.trim(),correo:d.email,
     pedido:pedido(d).map((x,i)=>`${i+1}. ${x}`).join("\n"),
@@ -475,6 +485,8 @@ function render(){
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
   $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>{setR(+a.dataset.wa,"sent",true);setTimeout(render,250);}));
+  $("list").querySelectorAll("[data-nq]").forEach(b=>b.onclick=()=>{const id=+b.dataset.nq;const d=DATA.find(x=>x.id===id);setR(id,"st","nq");render();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);});
+  $("list").querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{setR(+b.dataset.back,"st","pend");render();toast("Lo volviste a tener en cuenta");});
   $("list").querySelectorAll("select[data-st]").forEach(s=>s.onchange=()=>{setR(+s.dataset.st,"st",s.value);render();});
 }
 const stSel=(d,cls="")=>{const r=R(d);return `<select class="stsel s-${r.st} ${cls}" data-st="${d.id}" title="Estado">${Object.entries(ST).map(([k,l])=>`<option value="${k}" ${r.st===k?"selected":""}>${l}</option>`).join("")}</select>`;};
@@ -482,12 +494,13 @@ function row(d,n,why){
   const r=R(d),ap=r.apoyo.trim();
   return `<div class="row" data-id="${d.id}">
    <div class="rk">${String(n).padStart(2,"0")}</div>
-   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
+   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${FUERA.includes(r.st)?`<span class="why">${r.st==="nq"?"Lo descartaron: no quedó":"No va a participar"}</span>`:d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
      ${r.st==="pend"||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
      <a class="ic wa ${r.sent?"done":""}" href="${waURL(d,waText(d))}" target="_blank" rel="noopener" data-wa="${d.id}" title="Avisar por WhatsApp">${IC.wa}</a>
+     ${!why&&!FUERA.includes(r.st)?`<button class="ic nq" data-nq="${d.id}" title="No quedó · sacarlo de los seleccionados">${IC.x}</button>`:FUERA.includes(r.st)?`<button class="ic" data-back="${d.id}" title="Volver a tenerlo en cuenta">↺</button>`:""}
    </div></div>`;
 }
 
@@ -514,6 +527,8 @@ function openRow(id){
      <div class="blk"><h4>Correo <button id="restore" style="${r.custom?"":"display:none"}">Volver a la plantilla</button></h4>
        <div class="fl"><textarea class="mail" id="dmail">${esc(mailText(d))}</textarea></div>
        <div class="hint"><span><b>Así se envía:</b> toca <b>Enviar correo</b> y se abre ${mailerName()} con el correo ya escrito, con los datos que tenemos y el formulario para responder. Si editas el texto aquí, cambia solo para esta persona.</span></div></div>
+     ${!FUERA.includes(r.st)?`<div class="blk"><button class="btn" id="dnq" style="width:100%;height:42px">${IC.x}No quedó · sacarlo de los seleccionados</button></div>`:`<div class="blk"><button class="btn" id="dback" style="width:100%;height:42px">↺ Volver a tenerlo en cuenta</button></div>`}
+     ${d.manual?`<div class="blk"><button class="btn" id="delman" style="width:100%;height:40px;color:var(--wine)">Quitar este emprendimiento agregado</button></div>`:""}
      <div class="blk"><h4>¿No ha respondido?</h4><div class="rem">
        <a class="btn" id="rwa" target="_blank" rel="noopener">${IC.wa}Recordar por WhatsApp</a>
        <a class="btn" id="rmail" target="_blank" rel="noopener">${IC.bell}Recordar por correo</a></div>
@@ -530,11 +545,52 @@ function openRow(id){
   $("dmail").oninput=e=>{setR(id,"custom",e.target.value);$("restore").style.display="";ref();};
   $("restore").onclick=()=>{setR(id,"custom","");$("dmail").value=mailText(d);$("restore").style.display="none";ref();};
   if($("dsend"))$("dsend").onclick=()=>sendMail(d);
+  if($("dnq"))$("dnq").onclick=()=>{setR(id,"st","nq");close();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);};
+  if($("dback"))$("dback").onclick=()=>{setR(id,"st","pend");close();toast("Lo volviste a tener en cuenta");};
+  if($("delman"))$("delman").onclick=()=>{if($("delman").dataset.ok){confirmDel(id);}else{$("delman").dataset.ok=1;$("delman").textContent="Toca otra vez para confirmar";}};
   $("dwa").onclick=()=>setR(id,"sent",true);
   $("rwa").onclick=()=>{if(R(d).st==="env")setR(id,"st","nores");toast("Recordatorio listo");};
   $("rmail").onclick=()=>{copyText(fill(C(d.site).rmail,vars(d)));if(R(d).st==="env")setR(id,"st","nores");
     toast(threadURL(d)?"Recordatorio copiado · abre la conversación, toca Responder y pega con Ctrl+V":"Recordatorio listo",6000);};
 }
+
+/* ---------- agregar emprendimiento ---------- */
+const CATS=["Bisutería y joyería","Ropa y moda","Accesorios y regalos","Arte y decoración","Manualidades","Velas y aromas","Impresión 3D","Belleza y cuidado","Alimentos"];
+function igLink(t){t=(t||"").trim();if(!t)return["",""];if(/^https?:\/\//i.test(t))return[t,t.replace(/^https?:\/\/(www\.)?/,"").replace(/\/$/,"")];const h=t.replace(/^@/,"").replace(/\s+/g,"");return[`https://www.instagram.com/${h}/`,"@"+h];}
+function openAdd(){
+  open(`<div class="dh"><div class="lb">Nuevo</div><h3>Agregar emprendimiento</h3><p>Queda guardado en el Drive y lo ven Nicolly y Asley.</p><button class="ic x">${IC.x}</button></div>
+   <div class="db">
+     <div class="blk"><h4>Emprendimiento</h4>
+       <div class="g2"><div class="fl"><label>Site</label><select id="a_site" class="sel">${SITES.map(s=>`<option ${s===site?"selected":""}>${s}</option>`).join("")}</select></div>
+       <div class="fl"><label>Categoría</label><select id="a_sub" class="sel">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div></div>
+       <div class="fl" style="margin-top:10px"><label>Nombre del emprendimiento</label><input id="a_emp"></div>
+       <div class="fl" style="margin-top:10px"><label>Instagram o página (opcional)</label><input id="a_red" placeholder="@usuario o enlace"></div>
+       <div class="fl" style="margin-top:10px"><label>Descripción</label><textarea id="a_desc" rows="3"></textarea></div></div>
+     <div class="blk"><h4>Colaborador</h4>
+       <div class="fl"><label>Nombre completo</label><input id="a_nombre"></div>
+       <div class="g2" style="margin-top:10px"><div class="fl"><label>Celular</label><input id="a_tel" inputmode="numeric"></div><div class="fl"><label>Correo</label><input id="a_email" type="email"></div></div></div>
+     <div class="blk"><h4>Acompañante que atenderá el stand</h4>
+       <div class="fl"><label>Nombre completo</label><input id="a_apoyo" placeholder="Opcional"></div>
+       <div class="g2" style="margin-top:10px"><div class="fl"><label>Celular</label><input id="a_atel" inputmode="numeric"></div><div class="fl"><label>Parentesco</label><input id="a_rel"></div></div></div>
+     <label class="chk"><input type="checkbox" id="a_top" checked>Incluirlo en los seleccionados del site</label>
+   </div>
+   <div class="df"><button class="btn" id="acancel">Cancelar</button><button class="btn wine" id="asave">Agregar</button></div>`);
+  $("acancel").onclick=close;
+  $("asave").onclick=()=>{
+    const g=k=>$("a_"+k).value.trim();
+    if(!g("emp")||!g("nombre")||!g("email")){toast("Completa el nombre del emprendimiento, el colaborador y su correo");return;}
+    const sub=g("sub"), ap=g("apoyo"), [red,redtxt]=igLink(g("red")), top=$("a_top").checked;
+    const PRODUCTOS=["Bisutería y joyería","Ropa y moda","Accesorios y regalos","Arte y decoración","Manualidades","Velas y aromas","Impresión 3D"];
+    const tier=top?"A":sub==="Alimentos"?"E":PRODUCTOS.includes(sub)?(ap?"A":"B"):"B";
+    const id=Date.now();
+    const d={id,site:g("site"),tier,score:top?200:70,emp:g("emp"),sub,food:sub==="Alimentos",nombre:g("nombre"),primer:g("nombre").split(/\s+/)[0],
+      tel:g("tel").replace(/\D/g,""),email:g("email").toLowerCase(),apoyo:ap,apoyoTel:g("atel").replace(/\D/g,""),rel:g("rel"),desc:g("desc"),red,redtxt,nota:"Agregado manualmente",manual:true};
+    S.r[id]={ts:now(),st:"pend",sent:false,apoyo:ap,cc:"",camp:"",hor:"",atel:d.apoyoTel,paren:d.rel,corr:"",custom:"",nuevo:d};
+    rebuild(); save(); site=d.site; S.site=site; persist(); tab="sel"; close(); toast("Emprendimiento agregado");
+  };
+}
+function removeManual(id){ if(!confirmDel(id)) return; }
+function confirmDel(id){ const r=S.r[id]; if(!r||!r.nuevo) return false; r.nuevo=Object.assign({},r.nuevo,{borrado:true}); r.ts=now(); rebuild(); save(); close(); toast("Emprendimiento eliminado"); return true; }
 
 /* ---------- cargar respuesta ---------- */
 const PATS=[["stock",/productos listos|exhibir/i],["part",/confirmas|participaci/i],["atel",/celular/i],["paren",/parentesco/i],["corr",/corregir|correcci/i],["camp",/campa[ñn]a/i],["hor",/horario/i],["apoyo",/acompa[ñn]ante|persona que atender|nombre completo|atender[aá] tu stand/i]];
@@ -665,6 +721,7 @@ $("mailerBtn").onclick=()=>{
 };
 
 $("pasteBtn").onclick=()=>openPaste(null);
+$("addBtn").onclick=openAdd;
 /* ---------- fields ---------- */
 
 
@@ -684,7 +741,7 @@ function merge(resp){
   const pick=(loc,rem)=>{Object.keys(rem||{}).forEach(k=>{if(!loc[k]||(rem[k].ts||0)>(loc[k].ts||0))loc[k]=rem[k];});};
   pick(S.r,remote.r); pick(S.c,remote.c);
   if(remote.g&&(remote.g.ts||0)>(S.g.ts||0)) S.g=Object.assign({},remote.g,{url:S.g.url});
-  persist();
+  rebuild(); persist();
 }
 async function pull(){
   if(!S.g.url||!CLAVE) return false;
