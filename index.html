@@ -205,6 +205,9 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 
 .ic.nq:hover{color:var(--wine);border-color:#e3c3c9;background:#fbf0f1}
 .s-nq{background-color:#efe9ee;color:#7d6b78}
+
+.s-port{background-color:#e8f3ec;color:#3f7a58}
+.s-rec{background-color:#e3eef8;color:#3c6a93}
 </style>
 </head>
 <body>
@@ -254,7 +257,7 @@ const THEME = {"G8":["#f5dde1","#b0556a","#fbf0f1"],"Torre C":["#e6def3","#7a5ea
 const RESP = {"G8":"Gabriela Narváez","Torre C":"Nicolly Aldana","BTS 0":"Asley Martinez"};
 const META = 10;
 const KEY = "mision-emprende-v8";
-const ST = {pend:"Pendiente",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa",nq:"No quedó"};
+const ST = {pend:"Pendiente",port:"Portafolio pedido",rec:"Portafolio recibido",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa",nq:"No quedó"};
 const FUERA = ["decl","nq"];
 const DEF = {
  subj:"Feria de Emprendimiento TP 2026 | {emprendimiento} fue preseleccionado",
@@ -278,13 +281,13 @@ Ten en cuenta que es importante contar con stock suficiente para la venta de tus
 Tienes plazo hasta el {plazo}. ¡Nos emociona mucho tenerte en la feria!
 
 Saludos,`,
- wa:`Hola {nombre}, te saluda {firma}, de Emotions & Experiences de TP.
+ wa:`Hola {nombre}, ¿cómo estás? Te saluda {firma}, del equipo de Emotions & Experiences de TP.
 
-¡Tu emprendimiento *{emprendimiento}* fue preseleccionado para la Feria de Emprendimiento TP 2026 en {site}!
+Vimos tu inscripción a la Feria de Emprendimiento TP 2026 | Misión Emprende y nos llamó mucho la atención *{emprendimiento}*.
 
-Te enviamos un correo a {correo} con tus datos de inscripción para que nos confirmes tu participación y quién te acompañará en el stand. *Tienes plazo hasta el {plazo}.*
+¿Nos puedes enviar por aquí el portafolio o fotos de los productos que venderías en la feria? Cuando lo recibamos lo revisaremos y te escribiremos a tu correo ({correo}) para contarte si quedaste seleccionado(a) y confirmar si te gustaría participar.
 
-Si necesitamos algo más, te escribimos por aquí. ¡Gracias!`,
+¡Muchas gracias!`,
  rwa:`Hola {nombre}, ¿cómo vas? Te escribe {firma}, de Emotions & Experiences de TP.
 
 Te recordamos que aún no hemos recibido tu confirmación para la Feria de Emprendimiento TP 2026 con *{emprendimiento}*. Revisa el correo que te enviamos a {correo} y respóndenos antes del *{plazo}* para asegurar tu cupo.
@@ -320,7 +323,7 @@ function R(d){
   return r;
 }
 const setR=(id,k,v)=>{S.r[id][k]=v;S.r[id].ts=now();save();};
-const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].mail&&/Recuerda adjuntar la c[ée]dula|\{pedido\}/.test(S.c[s].mail))S.c[s].mail=DEF.mail;if(S.c[s].rmail&&/documentos de la persona/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].wa&&/con tus datos de inscripción para que los revises/.test(S.c[s].wa))S.c[s].wa=DEF.wa;if(S.c[s].mail&&!/stock suficiente/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace(/\n*(¿Y si la feria coincide)/,"\n\nTen en cuenta que es importante contar con stock suficiente para la venta de tus productos durante los días de feria.\n\n$1");if(S.c[s].mail&&!/\{aviso\}/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace("{alimentos}","{alimentos}{aviso}");Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
+const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].mail&&/Recuerda adjuntar la c[ée]dula|\{pedido\}/.test(S.c[s].mail))S.c[s].mail=DEF.mail;if(S.c[s].rmail&&/documentos de la persona/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].wa&&/con tus datos de inscripción|fue preseleccionado/.test(S.c[s].wa))S.c[s].wa=DEF.wa;if(S.c[s].mail&&!/stock suficiente/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace(/\n*(¿Y si la feria coincide)/,"\n\nTen en cuenta que es importante contar con stock suficiente para la venta de tus productos durante los días de feria.\n\n$1");if(S.c[s].mail&&!/\{aviso\}/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace("{alimentos}","{alimentos}{aviso}");Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
 const setC=(s,k,v)=>{C(s)[k]=v;S.c[s].ts=now();save();};
 const setG=(k,v)=>{S.g[k]=v;S.g.ts=now();save();};
 const ORDER={A:0,B:1,C:2,D:3,E:4,X:5};
@@ -437,7 +440,7 @@ function buildPDF(d){
 }
 function downloadPDF(d){ try{buildPDF(d).save(pdfName(d));return true;}catch(e){toast("No se pudo crear el PDF");return false;} }
 function sendMail(d){
-  if(R(d).st==="pend") setR(d.id,"st","env");
+  if(["pend","port","rec"].includes(R(d).st)) setR(d.id,"st","env");
   toast(`Correo listo en ${mailerName()} · revísalo y envíalo`,3500);
   setTimeout(render,300);
 }
@@ -488,7 +491,7 @@ function render(){
   $("list").innerHTML=L.length?L.map((d,i)=>row(d,off+i+1,tab==="more")).join(""):`<div class="empty">Sin emprendimientos.</div>`;
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
-  $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>{setR(+a.dataset.wa,"sent",true);setTimeout(render,250);}));
+  $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>{const id=+a.dataset.wa;setR(id,"sent",true);if(S.r[id].st==="pend")setR(id,"st","port");setTimeout(render,250);}));
   $("list").querySelectorAll("[data-nq]").forEach(b=>b.onclick=()=>{const id=+b.dataset.nq;const d=DATA.find(x=>x.id===id);setR(id,"st","nq");render();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);});
   $("list").querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{setR(+b.dataset.back,"st","pend");render();toast("Lo volviste a tener en cuenta");});
   $("list").querySelectorAll("select[data-st]").forEach(s=>s.onchange=()=>{setR(+s.dataset.st,"st",s.value);render();});
@@ -502,8 +505,8 @@ function row(d,n,why){
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
-     ${r.st==="pend"||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
-     <a class="ic wa ${r.sent?"done":""}" href="${waURL(d,waText(d))}" target="_blank" rel="noopener" data-wa="${d.id}" title="Avisar por WhatsApp">${IC.wa}</a>
+     ${["pend","port","rec"].includes(r.st)||!threadURL(d)?`<a class="btn wine" href="${compose(d.email,subj(d),mailText(d))}" ${tgt()} data-send="${d.id}">${IC.mail}Enviar correo</a>`:`<a class="btn" href="${threadURL(d)}" target="_blank" rel="noopener" title="Abre la conversación con este emprendimiento">${IC.mail}Ver conversación</a>`}
+     <a class="ic wa ${r.sent?"done":""}" href="${waURL(d,waText(d))}" target="_blank" rel="noopener" data-wa="${d.id}" title="Pedir portafolio por WhatsApp">${IC.wa}</a>
      ${!why&&!FUERA.includes(r.st)?`<button class="ic nq" data-nq="${d.id}" title="No quedó · sacarlo de los seleccionados">${IC.x}</button>`:FUERA.includes(r.st)?`<button class="ic" data-back="${d.id}" title="Volver a tenerlo en cuenta">↺</button>`:""}
    </div></div>`;
 }
@@ -538,7 +541,7 @@ function openRow(id){
        <a class="btn" id="rmail" target="_blank" rel="noopener">${IC.bell}Recordar por correo</a></div>
        <div class="note" style="margin-top:8px">El recordatorio por correo se responde dentro de la misma conversación: se copia el texto, se abre el hilo con este emprendimiento y solo tocas Responder y pegas.</div></div>
    </div>
-   <div class="df"><a class="btn" id="dwa" target="_blank" rel="noopener">${IC.wa}Avisar por WhatsApp</a>${r.st==="pend"||!threadURL(d)?`<a class="btn wine" id="dsend" ${tgt()}>${IC.mail}Enviar correo</a>`:`<a class="btn wine" id="dthread" href="${threadURL(d)}" target="_blank" rel="noopener">${IC.mail}Ver conversación</a>`}</div>`);
+   <div class="df"><a class="btn" id="dwa" target="_blank" rel="noopener">${IC.wa}Pedir portafolio</a>${["pend","port","rec"].includes(r.st)||!threadURL(d)?`<a class="btn wine" id="dsend" ${tgt()}>${IC.mail}Enviar correo</a>`:`<a class="btn wine" id="dthread" href="${threadURL(d)}" target="_blank" rel="noopener">${IC.mail}Ver conversación</a>`}</div>`);
   const ref=()=>{const c=C(d.site),v=vars(d);
     if($("dsend"))$("dsend").href=compose(d.email,subj(d),mailText(d));$("dwa").href=waURL(d,waText(d));
     $("rwa").href=waURL(d,fill(c.rwa,v));$("rmail").href=threadURL(d)||compose(d.email,subj(d),fill(c.rmail,v));};
@@ -552,7 +555,7 @@ function openRow(id){
   if($("dnq"))$("dnq").onclick=()=>{setR(id,"st","nq");close();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);};
   if($("dback"))$("dback").onclick=()=>{setR(id,"st","pend");close();toast("Lo volviste a tener en cuenta");};
   if($("delman"))$("delman").onclick=()=>{if($("delman").dataset.ok){confirmDel(id);}else{$("delman").dataset.ok=1;$("delman").textContent="Toca otra vez para confirmar";}};
-  $("dwa").onclick=()=>setR(id,"sent",true);
+  $("dwa").onclick=()=>{setR(id,"sent",true);if(S.r[id].st==="pend")setR(id,"st","port");};
   $("rwa").onclick=()=>{if(R(d).st==="env")setR(id,"st","nores");toast("Recordatorio listo");};
   $("rmail").onclick=()=>{copyText(fill(C(d.site).rmail,vars(d)));if(R(d).st==="env")setR(id,"st","nores");
     toast(threadURL(d)?"Recordatorio copiado · abre la conversación, toca Responder y pega con Ctrl+V":"Recordatorio listo",6000);};
@@ -663,7 +666,7 @@ $("tplBtn").onclick=()=>{
      <div class="blk"><h4>Asunto</h4><div class="fl"><input id="t_subj" value="${esc(c.subj)}"></div></div>
      <div class="blk"><h4>Correo · escribe aquí para cambiarlo</h4><div class="fl"><textarea class="mail" id="t_mail">${esc(c.mail)}</textarea></div></div>
      <div class="blk"><h4>Vista previa · solo lectura <span id="pvn" style="text-transform:none;letter-spacing:0;font-weight:500"></span></h4><div class="fl"><textarea id="tprev" readonly style="min-height:300px;background:var(--t3)"></textarea></div></div>
-     <div class="blk"><h4>Aviso por WhatsApp</h4><div class="fl"><textarea id="t_wa" rows="8">${esc(c.wa)}</textarea></div></div>
+     <div class="blk"><h4>WhatsApp · pedir portafolio</h4><div class="fl"><textarea id="t_wa" rows="8">${esc(c.wa)}</textarea></div></div>
      <div class="blk"><h4>Recordatorio por WhatsApp</h4><div class="fl"><textarea id="t_rwa" rows="7">${esc(c.rwa)}</textarea></div></div>
      <div class="blk"><h4>Recordatorio por correo</h4><div class="note" style="margin-bottom:8px">Se envía como respuesta dentro de la misma conversación, así que no lleva asunto.</div><div class="fl"><textarea id="t_rmail" rows="9">${esc(c.rmail)}</textarea></div></div>
    </div>
