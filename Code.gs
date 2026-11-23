@@ -19,7 +19,7 @@ const TROZO = 40000;
 
 function doGet(e) {
   if (!autorizado_(e && e.parameter && e.parameter.k)) return salida_({ error: 'clave' });
-  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerBase_() });
+  return salida_({ auth: true, state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerBase_() });
 }
 
 function doPost(e) {
@@ -32,7 +32,7 @@ function doPost(e) {
     const combinado = combinar_(leerJSON_(HOJA_ESTADO, vacio_()), entrada.state || {});
     guardarJSON_(HOJA_ESTADO, combinado);
     if (entrada.table && entrada.table.length) escribirTabla_(entrada.table);
-    return salida_({ state: combinado, base: leerBase_() });
+    return salida_({ auth: true, state: combinado, base: leerBase_() });
   } finally {
     lock.releaseLock();
   }
