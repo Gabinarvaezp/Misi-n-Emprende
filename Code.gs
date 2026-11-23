@@ -113,7 +113,15 @@ function combinar_(a, b) {
   return { r: elegir(a.r, b.r), c: elegir(a.c, b.c), g: g };
 }
 
-function libro_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+// Funciona tanto si el script está dentro del Sheet como si es un proyecto aparte.
+const ID_SHEET = '107k_-H9YTIKNxU80LXe35bSHTs8IOK7-D3o-C-caeCU';
+function libro_() { return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(ID_SHEET); }
+
+// Para probar desde el editor: selecciona "probar" y toca Ejecutar. Debe decir cuántos emprendimientos hay.
+function probar() {
+  Logger.log('Clave configurada: ' + (libro_().getSheetByName(HOJA_CONFIG) ? 'sí' : 'NO (falta la hoja _config)'));
+  Logger.log('Emprendimientos en Base: ' + leerBase_().length);
+}
 
 function salida_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
