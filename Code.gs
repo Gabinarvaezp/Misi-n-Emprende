@@ -7,15 +7,19 @@
  * 2. Borra lo que aparece y pega este código. Guarda.
  * 3. Implementar > Nueva implementación > Aplicación web.
  *    Ejecutar como: Yo. Quién tiene acceso: Cualquier persona.
- * 4. Copia la URL que termina en /exec y pégala en la app.
+ * 4. Si cambias el código: Implementar > Administrar implementaciones >
+ *    lápiz > Versión: Nueva versión > Implementar (la URL no cambia).
  */
 const HOJA_SEGUIMIENTO = 'Seguimiento';
 const HOJA_ESTADO = '_estado';
-const HOJA_BASE = '_base';
+const HOJA_BASE = 'Base';
+const HOJA_CONFIG = '_config';
+const COLUMNAS = ['id','site','tier','score','emp','sub','food','nombre','primer','tel','email','apoyo','apoyoTel','rel','desc'];
 const TROZO = 40000;
 
-function doGet() {
-  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerJSON_(HOJA_BASE, []) });
+function doGet(e) {
+  if (!autorizado_(e && e.parameter && e.parameter.k)) return salida_({ error: 'clave' });
+  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerBase_() });
 }
 
 function doPost(e) {
@@ -23,17 +27,51 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     const entrada = JSON.parse(e.postData.contents || '{}');
-    if (entrada.base && entrada.base.length) guardarJSON_(HOJA_BASE, entrada.base);
+    if (!autorizado_(entrada.k)) return salida_({ error: 'clave' });
+    if (entrada.base && entrada.base.length) escribirBase_(entrada.base);
     const combinado = combinar_(leerJSON_(HOJA_ESTADO, vacio_()), entrada.state || {});
     guardarJSON_(HOJA_ESTADO, combinado);
     if (entrada.table && entrada.table.length) escribirTabla_(entrada.table);
-    return salida_({ state: combinado, base: leerJSON_(HOJA_BASE, []) });
+    return salida_({ state: combinado, base: leerBase_() });
   } finally {
     lock.releaseLock();
   }
 }
 
 function vacio_() { return { r: {}, c: {}, g: {} }; }
+
+// La clave del equipo vive en la hoja oculta _config (celda B1), nunca en GitHub.
+function autorizado_(k) {
+  const hoja = libro_().getSheetByName(HOJA_CONFIG);
+  const clave = hoja ? String(hoja.getRange('B1').getValue()).trim() : '';
+  return !!clave && String(k || '').trim().toUpperCase() === clave.toUpperCase();
+}
+
+// La hoja "Base" tiene un emprendimiento por fila; se puede editar a mano.
+function leerBase_() {
+  const hoja = libro_().getSheetByName(HOJA_BASE);
+  if (!hoja || hoja.getLastRow() < 2) return [];
+  const filas = hoja.getDataRange().getValues();
+  const cab = filas.shift().map(String);
+  return filas.filter(f => String(f[0]).trim() !== '').map(f => {
+    const o = {};
+    cab.forEach((c, i) => {
+      const v = f[i];
+      if (c === 'id' || c === 'score') o[c] = Number(v) || 0;
+      else if (c === 'food') o[c] = v === true || String(v).toUpperCase() === 'SI';
+      else o[c] = v === null || v === undefined ? '' : String(v);
+    });
+    return o;
+  });
+}
+
+function escribirBase_(lista) {
+  const libro = libro_();
+  const hoja = libro.getSheetByName(HOJA_BASE) || libro.insertSheet(HOJA_BASE);
+  const filas = [COLUMNAS].concat(lista.map(o => COLUMNAS.map(c => c === 'food' ? (o[c] ? 'SI' : '') : (o[c] === undefined ? '' : o[c]))));
+  hoja.clearContents();
+  hoja.getRange(1, 1, filas.length, COLUMNAS.length).setNumberFormat('@').setValues(filas.map(f => f.map(String)));
+}
 
 function leerJSON_(nombre, porDefecto) {
   const hoja = libro_().getSheetByName(nombre);

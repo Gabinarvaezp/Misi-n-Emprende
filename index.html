@@ -186,6 +186,11 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .sv-s h3{margin:0 0 3px;font-size:16px;font-weight:600}
 .sv-s p{margin:0;color:var(--mute);font-size:13.5px}
 @media(max-width:700px){.sv h1{font-size:36px}.sv-s{grid-template-columns:40px 1fr}.sv-s .btn{grid-column:1/-1}}
+.sv-key{display:flex;gap:10px;max-width:460px}
+.sv-key input{flex:1;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:0 18px;height:48px;font:inherit;font-size:15px;outline:none;letter-spacing:.06em}
+.sv-key input:focus{border-color:#c9b3a4;box-shadow:0 0 0 4px #f1e6dc}
+.sv-key .btn{height:48px;padding:0 26px;font-size:14px}
+.sv-msg{margin-top:12px;color:var(--wine);font-size:13.5px;min-height:20px}
 </style>
 </head>
 <body>
@@ -194,7 +199,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
   <div class="navsub">Feria de Emprendimiento TP 2026</div>
   <span class="sp"></span>
   <button class="ghost" id="mailerBtn"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7.5 8 5.5 8-5.5"/></svg><span id="mailerTxt"></span></button>
-  <button class="sync" id="syncBtn"><span class="d"></span><span id="syncTxt">Conectar Drive</span></button>
+  <button class="sync" id="syncBtn"><span class="d"></span><span id="syncTxt">Drive</span></button>
 </nav>
 <section id="setup" style="display:none"></section>
 <div class="wrap" id="main">
@@ -220,8 +225,12 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 const BKEY = "mision-emprende-base";
 let DATA = []; try{DATA=JSON.parse(localStorage.getItem(BKEY))||[];}catch(e){}
 let pendingBase = null;
+const DRIVE_URL = "https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec";
+const CKEY = "mision-emprende-clave";
+let CLAVE = ""; try{CLAVE=localStorage.getItem(CKEY)||"";}catch(e){}
+let claveMala = false;
 function setBase(arr){DATA=arr;try{localStorage.setItem(BKEY,JSON.stringify(arr));}catch(e){}}
-const APPS_SCRIPT = "/**\n * Misión Emprende · Feria de Emprendimiento TP 2026\n * Respaldo en Google Drive para la app de emprendimientos.\n *\n * Cómo instalarlo:\n * 1. Abre tu Google Sheet > Extensiones > Apps Script.\n * 2. Borra lo que aparece y pega este código. Guarda.\n * 3. Implementar > Nueva implementación > Aplicación web.\n *    Ejecutar como: Yo. Quién tiene acceso: Cualquier persona.\n * 4. Copia la URL que termina en /exec y pégala en la app.\n */\nconst HOJA_SEGUIMIENTO = 'Seguimiento';\nconst HOJA_ESTADO = '_estado';\nconst HOJA_BASE = '_base';\nconst TROZO = 40000;\n\nfunction doGet() {\n  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerJSON_(HOJA_BASE, []) });\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const entrada = JSON.parse(e.postData.contents || '{}');\n    if (entrada.base && entrada.base.length) guardarJSON_(HOJA_BASE, entrada.base);\n    const combinado = combinar_(leerJSON_(HOJA_ESTADO, vacio_()), entrada.state || {});\n    guardarJSON_(HOJA_ESTADO, combinado);\n    if (entrada.table && entrada.table.length) escribirTabla_(entrada.table);\n    return salida_({ state: combinado, base: leerJSON_(HOJA_BASE, []) });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction vacio_() { return { r: {}, c: {}, g: {} }; }\n\nfunction leerJSON_(nombre, porDefecto) {\n  const hoja = libro_().getSheetByName(nombre);\n  if (!hoja || hoja.getLastRow() === 0) return porDefecto;\n  const texto = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues()\n    .map(f => String(f[0]).replace(/^~/, '')).join('');\n  return texto ? JSON.parse(texto) : porDefecto;\n}\n\nfunction guardarJSON_(nombre, obj) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(nombre) || libro.insertSheet(nombre);\n  const texto = JSON.stringify(obj);\n  const filas = [];\n  for (let i = 0; i < texto.length; i += TROZO) filas.push(['~' + texto.slice(i, i + TROZO)]);\n  hoja.clear();\n  hoja.getRange(1, 1, filas.length, 1).setNumberFormat('@').setValues(filas);\n  if (!hoja.isSheetHidden()) hoja.hideSheet();\n}\n\nfunction escribirTabla_(filas) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(HOJA_SEGUIMIENTO) || libro.insertSheet(HOJA_SEGUIMIENTO, 0);\n  hoja.clearContents();\n  hoja.getRange(1, 1, filas.length, filas[0].length).setNumberFormat('@').setValues(filas);\n  hoja.getRange(1, 1, 1, filas[0].length).setFontWeight('bold').setBackground('#f3e9e1');\n  hoja.setFrozenRows(1);\n}\n\nfunction combinar_(a, b) {\n  const elegir = (x, y) => {\n    const o = Object.assign({}, x || {});\n    Object.keys(y || {}).forEach(k => {\n      if (!o[k] || (y[k].ts || 0) > (o[k].ts || 0)) o[k] = y[k];\n    });\n    return o;\n  };\n  const g = (b.g && (b.g.ts || 0) > ((a.g || {}).ts || 0)) ? b.g : (a.g || {});\n  return { r: elegir(a.r, b.r), c: elegir(a.c, b.c), g: g };\n}\n\nfunction libro_() { return SpreadsheetApp.getActiveSpreadsheet(); }\n\nfunction salida_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
+const APPS_SCRIPT = "/**\n * Misión Emprende · Feria de Emprendimiento TP 2026\n * Respaldo en Google Drive para la app de emprendimientos.\n *\n * Cómo instalarlo:\n * 1. Abre tu Google Sheet > Extensiones > Apps Script.\n * 2. Borra lo que aparece y pega este código. Guarda.\n * 3. Implementar > Nueva implementación > Aplicación web.\n *    Ejecutar como: Yo. Quién tiene acceso: Cualquier persona.\n * 4. Si cambias el código: Implementar > Administrar implementaciones >\n *    lápiz > Versión: Nueva versión > Implementar (la URL no cambia).\n */\nconst HOJA_SEGUIMIENTO = 'Seguimiento';\nconst HOJA_ESTADO = '_estado';\nconst HOJA_BASE = 'Base';\nconst HOJA_CONFIG = '_config';\nconst COLUMNAS = ['id','site','tier','score','emp','sub','food','nombre','primer','tel','email','apoyo','apoyoTel','rel','desc'];\nconst TROZO = 40000;\n\nfunction doGet(e) {\n  if (!autorizado_(e && e.parameter && e.parameter.k)) return salida_({ error: 'clave' });\n  return salida_({ state: leerJSON_(HOJA_ESTADO, vacio_()), base: leerBase_() });\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const entrada = JSON.parse(e.postData.contents || '{}');\n    if (!autorizado_(entrada.k)) return salida_({ error: 'clave' });\n    if (entrada.base && entrada.base.length) escribirBase_(entrada.base);\n    const combinado = combinar_(leerJSON_(HOJA_ESTADO, vacio_()), entrada.state || {});\n    guardarJSON_(HOJA_ESTADO, combinado);\n    if (entrada.table && entrada.table.length) escribirTabla_(entrada.table);\n    return salida_({ state: combinado, base: leerBase_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction vacio_() { return { r: {}, c: {}, g: {} }; }\n\n// La clave del equipo vive en la hoja oculta _config (celda B1), nunca en GitHub.\nfunction autorizado_(k) {\n  const hoja = libro_().getSheetByName(HOJA_CONFIG);\n  const clave = hoja ? String(hoja.getRange('B1').getValue()).trim() : '';\n  return !!clave && String(k || '').trim().toUpperCase() === clave.toUpperCase();\n}\n\n// La hoja \"Base\" tiene un emprendimiento por fila; se puede editar a mano.\nfunction leerBase_() {\n  const hoja = libro_().getSheetByName(HOJA_BASE);\n  if (!hoja || hoja.getLastRow() < 2) return [];\n  const filas = hoja.getDataRange().getValues();\n  const cab = filas.shift().map(String);\n  return filas.filter(f => String(f[0]).trim() !== '').map(f => {\n    const o = {};\n    cab.forEach((c, i) => {\n      const v = f[i];\n      if (c === 'id' || c === 'score') o[c] = Number(v) || 0;\n      else if (c === 'food') o[c] = v === true || String(v).toUpperCase() === 'SI';\n      else o[c] = v === null || v === undefined ? '' : String(v);\n    });\n    return o;\n  });\n}\n\nfunction escribirBase_(lista) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(HOJA_BASE) || libro.insertSheet(HOJA_BASE);\n  const filas = [COLUMNAS].concat(lista.map(o => COLUMNAS.map(c => c === 'food' ? (o[c] ? 'SI' : '') : (o[c] === undefined ? '' : o[c]))));\n  hoja.clearContents();\n  hoja.getRange(1, 1, filas.length, COLUMNAS.length).setNumberFormat('@').setValues(filas.map(f => f.map(String)));\n}\n\nfunction leerJSON_(nombre, porDefecto) {\n  const hoja = libro_().getSheetByName(nombre);\n  if (!hoja || hoja.getLastRow() === 0) return porDefecto;\n  const texto = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues()\n    .map(f => String(f[0]).replace(/^~/, '')).join('');\n  return texto ? JSON.parse(texto) : porDefecto;\n}\n\nfunction guardarJSON_(nombre, obj) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(nombre) || libro.insertSheet(nombre);\n  const texto = JSON.stringify(obj);\n  const filas = [];\n  for (let i = 0; i < texto.length; i += TROZO) filas.push(['~' + texto.slice(i, i + TROZO)]);\n  hoja.clear();\n  hoja.getRange(1, 1, filas.length, 1).setNumberFormat('@').setValues(filas);\n  if (!hoja.isSheetHidden()) hoja.hideSheet();\n}\n\nfunction escribirTabla_(filas) {\n  const libro = libro_();\n  const hoja = libro.getSheetByName(HOJA_SEGUIMIENTO) || libro.insertSheet(HOJA_SEGUIMIENTO, 0);\n  hoja.clearContents();\n  hoja.getRange(1, 1, filas.length, filas[0].length).setNumberFormat('@').setValues(filas);\n  hoja.getRange(1, 1, 1, filas[0].length).setFontWeight('bold').setBackground('#f3e9e1');\n  hoja.setFrozenRows(1);\n}\n\nfunction combinar_(a, b) {\n  const elegir = (x, y) => {\n    const o = Object.assign({}, x || {});\n    Object.keys(y || {}).forEach(k => {\n      if (!o[k] || (y[k].ts || 0) > (o[k].ts || 0)) o[k] = y[k];\n    });\n    return o;\n  };\n  const g = (b.g && (b.g.ts || 0) > ((a.g || {}).ts || 0)) ? b.g : (a.g || {});\n  return { r: elegir(a.r, b.r), c: elegir(a.c, b.c), g: g };\n}\n\nfunction libro_() { return SpreadsheetApp.getActiveSpreadsheet(); }\n\nfunction salida_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
 const SITES = ["G8","Torre C","BTS 0"];
 const THEME = {"G8":["#ecdfd0","#8a6248","#f6efe7"],"Torre C":["#f5dde1","#b0556a","#fbf0f1"],"BTS 0":["#f6eac0","#9c7a17","#fbf6e3"]};
 const RESP = {"G8":"Gabriela Narváez","Torre C":"Nicolly Aldana","BTS 0":"Asley Martinez"};
@@ -278,7 +287,7 @@ const OLD_MAIL_MARK="Adjunto encontrarás un PDF con los datos que tenemos";
 
 /* ---------- state ---------- */
 let S={}; try{S=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){}
-S.r=S.r||{}; S.c=S.c||{}; S.g=S.g||{ts:0,isa:"",url:""};
+S.r=S.r||{}; S.c=S.c||{}; S.g=S.g||{ts:0,isa:"",url:""}; if(!S.g.url) S.g.url=DRIVE_URL;
 let site=S.site||"G8", tab="sel";
 const now=()=>Date.now();
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
@@ -408,17 +417,20 @@ function sendMail(d){
 
 /* ---------- render ---------- */
 function setupView(){
-  const on=!!S.g.url;
   $("setup").innerHTML=`<div class="sv">
     <div class="sv-k">Feria de Emprendimiento TP 2026</div>
     <h1>Bienvenida a <em>Misión Emprende</em></h1>
-    <p>Los datos de los emprendimientos se guardan en tu Google Drive, no en esta página. Conecta el Drive del equipo para empezar.</p>
-    <div class="sv-steps">
-      <div class="sv-s ${on?"done":""}"><b>1</b><div><h3>Conectar Google Drive</h3><p>${on?"Conectado. Si la base ya está en el Sheet, se carga sola.":"Pega la URL de Apps Script de tu Google Sheet."}</p></div><button class="btn ${on?"":"wine"}" id="sv1">${on?"Ver conexión":"Conectar"}</button></div>
-      <div class="sv-s"><b>2</b><div><h3>Subir la base de emprendimientos</h3><p>Solo la primera vez: sube el archivo <i>base_emprendimientos.json</i>. Después, quien conecte el mismo Drive la verá automáticamente.</p></div><label class="btn wine" style="cursor:pointer">Subir archivo<input type="file" id="sv2" accept=".json,application/json" hidden></label></div>
-    </div></div>`;
-  $("sv1").onclick=()=>$("syncBtn").onclick();
-  $("sv2").onchange=e=>importBase(e.target.files[0]);
+    <p>Escribe la clave del equipo para ver los emprendimientos. Solo se pide una vez en este computador.</p>
+    <form class="sv-key" id="svf">
+      <input id="svk" placeholder="Clave del equipo" autocomplete="off" value="${esc(claveMala?CLAVE:"")}">
+      <button class="btn wine" type="submit">Entrar</button>
+    </form>
+    <div class="sv-msg" id="svm">${claveMala?"Esa clave no es correcta. Revísala e intenta de nuevo.":""}</div></div>`;
+  $("svf").onsubmit=async ev=>{ev.preventDefault();const k=$("svk").value.trim();if(!k)return;
+    CLAVE=k;try{localStorage.setItem(CKEY,k);}catch(e){}
+    $("svm").textContent="Cargando emprendimientos…";
+    const ok=await pull(); if(ok&&!DATA.length){$("svm").textContent="La conexión funciona, pero el Sheet no tiene emprendimientos en la hoja Base.";} if(ok) push();};
+  setTimeout(()=>{const k=$("svk");if(k)k.focus();},50);
 }
 function importBase(f){
   if(!f) return; const rd=new FileReader();
@@ -429,7 +441,7 @@ function importBase(f){
 }
 function render(){
   $("mailerTxt").textContent={gmail:"Gmail",outlook:"Outlook",app:"App de correo"}[mailer()];
-  const ready=DATA.length>0;
+  const ready=DATA.length>0&&!!CLAVE&&!claveMala;
   $("setup").style.display=ready?"none":""; $("main").style.display=ready?"":"none";
   if(!ready){setupView();return;}
   document.body.dataset.site=site;
@@ -660,13 +672,15 @@ function merge(resp){
   persist();
 }
 async function pull(){
-  if(!S.g.url) return;
-  try{setSync("busy","Sincronizando…");const res=await fetch(S.g.url);merge(await res.json());setSync("on","Guardado en Drive");if(!$("dr").classList.contains("on"))render();}
-  catch(e){setSync("err","Sin conexión con Drive");}
+  if(!S.g.url||!CLAVE) return false;
+  try{setSync("busy","Sincronizando…");const res=await fetch(S.g.url+(S.g.url.includes("?")?"&":"?")+"k="+encodeURIComponent(CLAVE));const j=await res.json();
+    if(j.error==="clave"){claveMala=true;setSync("err","Clave incorrecta");render();return false;}
+    claveMala=false;merge(j);setSync("on","Guardado en Drive");if(!$("dr").classList.contains("on"))render();return true;}
+  catch(e){setSync("err","Sin conexión con Drive");return false;}
 }
 async function push(){
-  if(!S.g.url||syncing) return; syncing=true;
-  try{setSync("busy","Guardando…");const payload=JSON.stringify(Object.assign({state:{r:S.r,c:S.c,g:Object.assign({},S.g,{url:undefined})},table:DATA.length?table():null},pendingBase?{base:pendingBase}:{}));
+  if(!S.g.url||!CLAVE||syncing) return; syncing=true;
+  try{setSync("busy","Guardando…");const payload=JSON.stringify(Object.assign({k:CLAVE,state:{r:S.r,c:S.c,g:Object.assign({},S.g,{url:undefined})},table:DATA.length?table():null},pendingBase?{base:pendingBase}:{}));
     const res=await fetch(S.g.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:payload});
     pendingBase=null;
     try{merge(await res.json());}catch(e){}
@@ -674,7 +688,7 @@ async function push(){
   catch(e){setSync("err","No se pudo guardar en Drive");}
   syncing=false;
 }
-function queueSync(){if(!S.g.url)return;clearTimeout(syncT);setSync("busy","Cambios sin guardar…");syncT=setTimeout(push,1500);}
+function queueSync(){if(!S.g.url||!CLAVE)return;clearTimeout(syncT);setSync("busy","Cambios sin guardar…");syncT=setTimeout(push,1500);}
 $("syncBtn").onclick=()=>{
   open(`<div class="dh"><div class="lb">Respaldo</div><h3>Google Drive</h3><p>Todo se guarda en un Google Sheet y se actualiza para quien abra la app.</p><button class="ic x">${IC.x}</button></div>
    <div class="db">
@@ -684,22 +698,23 @@ $("syncBtn").onclick=()=>{
        <li>Toca <b>Implementar › Nueva implementación</b>, elige <b>Aplicación web</b>, en "Quién tiene acceso" selecciona <b>Cualquier persona</b> e implementa. Autoriza los permisos.</li>
        <li>Copia la URL de la aplicación web y pégala aquí abajo.</li></ol>
        <button class="btn" id="gscopy" style="width:100%;height:42px">${IC.copy}Copiar código de Apps Script</button></div>
+     <div class="blk"><h4>Clave del equipo</h4><div class="fl"><input id="gskey" value="${esc(CLAVE)}"></div><div class="note" style="margin-top:6px">Se cambia en la hoja oculta "_config" del Sheet (celda B1).</div></div>
      <div class="blk"><h4>URL de la aplicación web</h4><div class="fl"><input id="gsurl" value="${esc(S.g.url||"")}" placeholder="https://script.google.com/macros/s/…/exec"></div>
        <div class="note" style="margin-top:6px">Comparte esta misma URL con Nicolly y Asley para que trabajen sobre los mismos datos. En el Sheet verás la hoja "Seguimiento" con todo actualizado.</div></div>
      <div class="blk"><h4>Base de emprendimientos</h4><div class="note" style="margin-bottom:8px">${DATA.length?`Cargada: ${DATA.length} emprendimientos.`:"Aún no hay base cargada."} Para reemplazarla, sube un nuevo archivo base_emprendimientos.json.</div>
        <label class="btn" style="cursor:pointer;width:100%;height:42px">${IC.dl}Subir base<input type="file" id="gsbase" accept=".json,application/json" hidden></label></div>
    </div>
-   <div class="df"><button class="btn" id="gsoff">Desconectar</button><button class="btn wine" id="gson">Conectar y sincronizar</button></div>`);
+   <div class="df"><button class="btn" id="gsoff">Cerrar sesión</button><button class="btn wine" id="gson">Guardar y sincronizar</button></div>`);
   $("gscopy").onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(APPS_SCRIPT):Promise.reject()).then(()=>toast("Código copiado")).catch(()=>{const t=document.createElement("textarea");t.value=APPS_SCRIPT;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();toast("Código copiado");});};
-  $("gson").onclick=async()=>{const u=$("gsurl").value.trim();if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)){toast("Pega la URL que termina en /exec");return;}S.g.url=u;persist();close();await pull();await push();render();};
+  $("gson").onclick=async()=>{const u=$("gsurl").value.trim();if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)){toast("Pega la URL que termina en /exec");return;}S.g.url=u;CLAVE=$("gskey").value.trim();try{localStorage.setItem(CKEY,CLAVE);}catch(e){}persist();close();await pull();await push();render();};
   $("gsbase").onchange=e=>{importBase(e.target.files[0]);close();};
-  $("gsoff").onclick=()=>{S.g.url="";persist();setSync("","Conectar Drive");close();};
+  $("gsoff").onclick=()=>{CLAVE="";try{localStorage.removeItem(CKEY);localStorage.removeItem(BKEY);}catch(e){}DATA=[];close();render();};
 };
 
 let tt=null;
 function toast(t,ms=1800){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),ms);}
 render();
-if(S.g.url){pull();setInterval(()=>{if(!syncing&&!$("dr").classList.contains("on"))pull();},45000);window.addEventListener("focus",()=>{if(!$("dr").classList.contains("on"))pull();});}
+if(S.g.url&&CLAVE){pull();setInterval(()=>{if(!syncing&&!$("dr").classList.contains("on"))pull();},45000);window.addEventListener("focus",()=>{if(!$("dr").classList.contains("on"))pull();});}
 
 </script>
 </body>
