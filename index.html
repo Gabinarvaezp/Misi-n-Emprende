@@ -221,6 +221,10 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ask.big.on{transform:translate(-50%,50%)}
 .dq{display:flex;flex-direction:column;gap:10px;width:100%;padding:6px 6px 6px 0}
 .dqb{display:flex;gap:8px;justify-content:flex-end}
+
+.row.hueco{cursor:default;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(0,0,0,.015) 10px 20px)}
+.row.hueco .av{background:var(--line2);color:var(--mute)}
+.row.hueco:hover{background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(0,0,0,.015) 10px 20px)}
 </style>
 </head>
 <body>
@@ -357,7 +361,11 @@ const IC={
 
 function lists(s){
   const all=DATA.filter(d=>d.site===s).sort((a,b)=>ORDER[a.tier]-ORDER[b.tier]||b.score-a.score);
+  all.forEach(d=>d.relleno=false);
   const sel=all.filter(d=>d.tier!=="X"&&!FUERA.includes(R(d).st)).slice(0,META);
+  if(sel.length<META){ // completar hasta 10 con los que tienen nota (servicios / bajo pedido), nunca virtuales ni duplicados
+    all.filter(d=>d.tier==="X"&&d.nota&&!FUERA.includes(R(d).st)).sort((a,b)=>b.score-a.score).slice(0,META-sel.length).forEach(d=>{d.relleno=true;sel.push(d);});
+  }
   return {sel,more:all.filter(d=>!sel.includes(d)),all};
 }
 
@@ -532,8 +540,11 @@ function render(){
   $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();});
 
   const L=tab==="sel"?sel:more, off=tab==="sel"?0:sel.length;
-  const falta=tab==="sel"&&sel.length<META?`<div class="falta"><b>Hay ${sel.length} de ${META}.</b> Ya no quedan más opciones disponibles en ${esc(site)}: las demás son servicios, trabajan bajo pedido, no pueden asistir o se marcaron como "No quedó". Para completar, usa <b>Agregar</b> o recupera uno con <b>↺</b> en "Otras opciones".</div>`:"";
-  $("list").innerHTML=falta+(L.length?L.map((d,i)=>row(d,off+i+1,tab==="more")).join(""):`<div class="empty">Sin emprendimientos.</div>`);
+  const nRel=sel.filter(d=>d.relleno).length, libres=tab==="sel"?Math.max(0,META-sel.length):0;
+  const falta=tab==="sel"&&(nRel||libres)?`<div class="falta">${nRel?`<b>Para completar los ${META}</b> se incluyeron ${nRel} que normalmente no se recomiendan (servicios o bajo pedido); revísenlos antes de escribirles. `:""}${libres?`<b>${libres>1?`Faltan ${libres} cupos`:"Falta 1 cupo"}.</b> Ya no quedan más inscritos en ${esc(site)}: agrega un emprendimiento o recupera uno descartado con ↺ en "Otras opciones".`:""}</div>`:"";
+  const huecos=Array.from({length:libres},(_,i)=>`<div class="row hueco"><div class="rk">${String(sel.length+i+1).padStart(2,"0")}</div><div class="e"><div class="av">+</div><div><b>Cupo libre</b><span>Agrega un emprendimiento para completar los ${META}</span></div></div><div></div><div></div><div class="acts"><button class="btn wine" data-addslot="1">${'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'}Agregar</button></div></div>`).join("");
+  $("list").innerHTML=falta+(L.length||huecos?L.map((d,i)=>row(d,off+i+1,tab==="more")).join("")+huecos:`<div class="empty">Sin emprendimientos.</div>`);
+  $("list").querySelectorAll("[data-addslot]").forEach(b=>b.onclick=e=>{e.stopPropagation();openAdd();});
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
   $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>askSent(DATA.find(x=>x.id==a.dataset.wa),"wa")));
@@ -546,7 +557,7 @@ function row(d,n,why){
   const r=R(d),ap=r.apoyo.trim();
   return `<div class="row" data-id="${d.id}">
    <div class="rk">${String(n).padStart(2,"0")}</div>
-   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${FUERA.includes(r.st)?`<span class="why">${r.st==="nq"?`No quedó: ${esc(motivoTxt(r))}`:"No va a participar"}</span>`:d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
+   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${d.relleno?`<span class="why">Completa el cupo · ${esc(d.nota)} · validar</span>`:FUERA.includes(r.st)?`<span class="why">${r.st==="nq"?`No quedó: ${esc(motivoTxt(r))}`:"No va a participar"}</span>`:d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
