@@ -234,7 +234,7 @@ const APPS_SCRIPT = "/**\n * Misión Emprende · Feria de Emprendimiento TP 2026
 const SITES = ["G8","Torre C","BTS 0"];
 const THEME = {"G8":["#f5dde1","#b0556a","#fbf0f1"],"Torre C":["#e6def3","#7a5ea8","#f4f0fa"],"BTS 0":["#f6eac0","#9c7a17","#fbf6e3"]};
 const RESP = {"G8":"Gabriela Narváez","Torre C":"Nicolly Aldana","BTS 0":"Asley Martinez"};
-const META = 9;
+const META = 10;
 const KEY = "mision-emprende-v8";
 const ST = {pend:"Pendiente",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa"};
 const DEF = {
@@ -314,7 +314,7 @@ const IC={
 
 function lists(s){
   const all=DATA.filter(d=>d.site===s).sort((a,b)=>ORDER[a.tier]-ORDER[b.tier]||b.score-a.score);
-  const sel=all.filter(d=>"ABC".includes(d.tier)).slice(0,META);
+  const sel=all.filter(d=>d.tier!=="X").slice(0,META);
   return {sel,more:all.filter(d=>!sel.includes(d)),all};
 }
 
