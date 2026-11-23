@@ -744,9 +744,9 @@ $("addBtn").onclick=openAdd;
 let syncT=null, syncing=false;
 function setSync(cls,txt){const b=$("syncBtn");b.className="sync "+cls;$("syncTxt").textContent=txt;}
 function table(){
-  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Nota","Productos para exhibir","Campaña","Horario","Acompañante (atiende el stand)","Celular acompañante","Parentesco","Correcciones","Estado","WhatsApp enviado"];
+  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Nota","Productos para exhibir","Campaña","Horario","Acompañante (atiende el stand)","Celular acompañante","Parentesco","Correcciones","Estado","WhatsApp enviado","Correo enviado","ID"];
   const rows=[H];
-  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,d.nota||"",r.stock||"",r.camp,r.hor,r.apoyo,r.atel,r.paren,r.corr,ST[r.st],r.sent?"Sí":""]);});});
+  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,d.nota||"",r.stock||"",r.camp,r.hor,r.apoyo,r.atel,r.paren,r.corr,ST[r.st],r.sent?"Sí":"",mailSent(r)?"Sí":"",String(d.id)]);});});
   return rows;
 }
 function merge(resp){
