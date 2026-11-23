@@ -356,7 +356,7 @@ const mailerName=()=>({gmail:"Gmail",outlook:"Outlook",app:"tu correo"}[mailer()
 function vars(d){
   const c=C(d.site), r=R(d), ap=r.apoyo.trim(), f=c.fecha.trim();
   return {nombre:d.primer,nombre_completo:d.nombre,emprendimiento:nice(d.emp),site:d.site,
-    fechas:f?`Las fechas son ${f}.`:"Será durante las primeras semanas de diciembre y te estaremos avisando las fechas exactas.",
+    fechas:f?`Las fechas son ${f}.`:"La feria se realizará en las primeras semanas de diciembre y nosotros te enviaremos la fecha exacta.",
     confirmacion:ap?`Queremos confirmar tu asistencia y la de ${ap}, quien atenderá tu stand.`:`Queremos confirmar tu asistencia y saber quién atenderá tu stand, ya que en el formulario no registraste a una persona de apoyo.`,
     persona_apoyo:ap||"la persona que elijas",plazo:c.lim.trim(),firma:c.resp.trim(),correo:d.email,
     pedido:pedido(d).map((x,i)=>`${i+1}. ${x}`).join("\n"),
