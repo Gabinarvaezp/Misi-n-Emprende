@@ -270,8 +270,10 @@ Para asegurar tu cupo, confírmanos tu participación y completa los datos que n
 
 {formulario}
 
+Ten en cuenta que es importante contar con stock suficiente para la venta de tus productos durante los días de feria.
+
 ¿Y si la feria coincide con tu turno? No te preocupes: {persona_apoyo} estará al frente de tu stand para que tu emprendimiento siga brillando mientras tú trabajas.
-{alimentos}
+{alimentos}{aviso}
 Tienes plazo hasta el {plazo}. ¡Nos emociona mucho tenerte en la feria!
 
 Saludos,`,
@@ -296,7 +298,7 @@ Para asegurar tu cupo en {site}, por favor responde este correo antes del {plazo
 Si ya no puedes participar, cuéntanos para darle el cupo a otro emprendimiento.
 
 Quedamos atentas. ¡Gracias!`};
-const VARS=["nombre","nombre_completo","emprendimiento","site","fechas","datos","formulario","persona_apoyo","alimentos","plazo","firma","correo"];
+const VARS=["nombre","nombre_completo","emprendimiento","site","fechas","datos","formulario","persona_apoyo","alimentos","aviso","plazo","firma","correo"];
 const OLD_MAIL_MARK="Adjunto encontrarás un PDF con los datos que tenemos";
 
 /* ---------- state ---------- */
@@ -317,7 +319,7 @@ function R(d){
   return r;
 }
 const setR=(id,k,v)=>{S.r[id][k]=v;S.r[id].ts=now();save();};
-const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].mail&&/Recuerda adjuntar la c[ée]dula|\{pedido\}/.test(S.c[s].mail))S.c[s].mail=DEF.mail;if(S.c[s].rmail&&/documentos de la persona/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].wa&&/con tus datos de inscripción para que los revises/.test(S.c[s].wa))S.c[s].wa=DEF.wa;Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
+const C=s=>{S.c[s]=Object.assign({ts:0,resp:RESP[s],fecha:"",lim:"miércoles 25 de noviembre"},S.c[s]||{});if(S.c[s].subj==="{emprendimiento} fue preseleccionado · Feria de Emprendimiento TP 2026")S.c[s].subj=DEF.subj;if(S.c[s].mail&&S.c[s].mail.includes("Adjunto encontrarás un PDF con los datos que tenemos"))S.c[s].mail=DEF.mail;if(S.c[s].mail)S.c[s].mail=S.c[s].mail.replace(/Saludos,\s*\{firma\}\s*Emotions & Experiences · TP\s*$/,"Saludos,");if(S.c[s].rmail&&/\{firma\}/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].mail&&/Recuerda adjuntar la c[ée]dula|\{pedido\}/.test(S.c[s].mail))S.c[s].mail=DEF.mail;if(S.c[s].rmail&&/documentos de la persona/.test(S.c[s].rmail))S.c[s].rmail=DEF.rmail;if(S.c[s].wa&&/con tus datos de inscripción para que los revises/.test(S.c[s].wa))S.c[s].wa=DEF.wa;if(S.c[s].mail&&!/stock suficiente/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace(/\n*(¿Y si la feria coincide)/,"\n\nTen en cuenta que es importante contar con stock suficiente para la venta de tus productos durante los días de feria.\n\n$1");if(S.c[s].mail&&!/\{aviso\}/.test(S.c[s].mail))S.c[s].mail=S.c[s].mail.replace("{alimentos}","{alimentos}{aviso}");Object.keys(DEF).forEach(k=>{if(S.c[s][k]==null)S.c[s][k]=DEF[k];});return S.c[s];};
 const setC=(s,k,v)=>{C(s)[k]=v;S.c[s].ts=now();save();};
 const setG=(k,v)=>{S.g[k]=v;S.g.ts=now();save();};
 const ORDER={A:0,B:1,C:2,D:3,E:4,X:5};
@@ -372,6 +374,7 @@ function vars(d){
     pedido:pedido(d).map((x,i)=>`${i+1}. ${x}`).join("\n"),
     formulario:formulario(d),
     datos:datosTxt(d),
+    aviso:d.aviso?`\n${d.aviso}\n`:"",
     alimentos:d.food?"\nComo tu emprendimiento es de alimentos, por lineamientos de SST los productos deben ir empacados y sellados, y tu participación queda sujeta a aprobación del site.\n":""};
 }
 const fill=(t,v)=>String(t||"").replace(/\{(\w+)\}/g,(m,k)=>k in v?v[k]:m).replace(/\n{3,}/g,"\n\n").trim();
