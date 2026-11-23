@@ -191,6 +191,13 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .sv-key input:focus{border-color:#c9b3a4;box-shadow:0 0 0 4px #f1e6dc}
 .sv-key .btn{height:48px;padding:0 26px;font-size:14px}
 .sv-msg{margin-top:12px;color:var(--wine);font-size:13.5px;min-height:20px}
+
+.e .lnk{display:inline-block;margin-top:2px;font-size:12px;color:var(--t2);text-decoration:none;font-weight:600}
+.e .lnk:hover{text-decoration:underline}
+.e .lnk.off{color:var(--mute);font-weight:500}
+.about p{margin:0;font-size:14px;line-height:1.6;color:var(--ink2);white-space:pre-line}
+.about h4 a{color:var(--wine);text-decoration:none;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none}
+.about .meta-l{margin-top:10px;font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -473,7 +480,7 @@ function row(d,n,why){
   const r=R(d),ap=r.apoyo.trim();
   return `<div class="row" data-id="${d.id}">
    <div class="rk">${String(n).padStart(2,"0")}</div>
-   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:""}</div></div>
+   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:""}</div></div>
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
@@ -491,6 +498,9 @@ function openRow(id){
   const d=DATA.find(x=>x.id===id); const r=R(d), v=vars(d);
   open(`<div class="dh"><div class="lb">${esc(d.site)} · ${esc(d.sub)}</div><h3>${esc(nice(d.emp))}</h3><p>${esc(d.nombre)} · ${esc(d.tel)} · ${esc(d.email)}</p><button class="ic x">${IC.x}</button></div>
    <div class="db">
+     <div class="blk about"><h4>Sobre el emprendimiento ${d.red?`<a href="${esc(d.red)}" target="_blank" rel="noopener">${/instagram/.test(d.red)?"Ver Instagram":/facebook/.test(d.red)?"Ver Facebook":"Ver página"} ↗</a>`:""}</h4>
+       <p>${esc(d.desc?d.desc.charAt(0).toUpperCase()+d.desc.slice(1):"Sin descripción.")}</p>
+       <div class="meta-l">${esc(d.sub)}${d.redtxt?` · ${esc(d.redtxt)}`:" · Sin redes registradas"}</div></div>
      <div class="blk"><h4>Estado</h4>${stSel(d,"big")}</div>
      <div class="blk"><h4>Respuesta del colaborador <button id="paste1">Pegar respuesta del correo</button></h4>
        <div class="g2"><div class="fl"><label>Campaña</label><input data-f="camp" value="${esc(r.camp)}"></div><div class="fl"><label>Horario laboral</label><input data-f="hor" value="${esc(r.hor)}"></div></div></div>
