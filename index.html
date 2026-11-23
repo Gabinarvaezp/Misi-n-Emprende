@@ -262,8 +262,9 @@ const BKEY = "mision-emprende-base";
 let BASE0 = []; try{BASE0=JSON.parse(localStorage.getItem(BKEY))||[];}catch(e){}
 let DATA = BASE0.slice();
 let pendingBase = null;
-const DRIVE_URL = "https://script.google.com/macros/s/AKfycbx7bq0gzr7APLHcB9paPd2UdX-0a6FRDmKAxNAfdSJVZAbL-vZaeII5n0gFx8dsuBmx/exec";
-const OLD_URLS = ["https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec"];
+const DRIVE_URL = "https://script.google.com/macros/s/AKfycbzLQjVOX8s-GPZFVxPovxLu-ShkPGvGLW6r6VHhazGW3sjOqk6q3hpmkNmVmx0ib1kC/exec";
+const ALT_URLS = ["https://script.google.com/macros/s/AKfycbzLQjVOX8s-GPZFVxPovxLu-ShkPGvGLW6r6VHhazGW3sjOqk6q3hpmkNmVmx0ib1kC/exec","https://script.google.com/macros/s/AKfycbx7bq0gzr7APLHcB9paPd2UdX-0a6FRDmKAxNAfdSJVZAbL-vZaeII5n0gFx8dsuBmx/exec"];
+const OLD_URLS = ["https://script.google.com/macros/s/AKfycbzOM9HMLaSz0xbqpxcw8ffC9gdqcyMcodq3L9kJGm5N7NSfzW0dxdBN5g_gloCQAEc/exec","https://script.google.com/macros/s/AKfycbx7bq0gzr7APLHcB9paPd2UdX-0a6FRDmKAxNAfdSJVZAbL-vZaeII5n0gFx8dsuBmx/exec"];
 const CKEY = "mision-emprende-clave";
 let CLAVE = ""; try{CLAVE=localStorage.getItem(CKEY)||"";}catch(e){}
 let claveMala = false, viejo = false, diag = "";
@@ -865,9 +866,16 @@ function merge(resp){
 async function pull(){
   if(!S.g.url||!CLAVE) return false;
   let res,j;
-  try{setSync("busy","Sincronizando…");res=await fetch(S.g.url+(S.g.url.includes("?")?"&":"?")+"k="+encodeURIComponent(CLAVE));}
-  catch(e){diag="red";setSync("err","Sin conexión con Drive");return false;}
-  try{j=await res.json();}catch(e){diag="html";setSync("err","El Apps Script respondió con error");return false;}
+  setSync("busy","Sincronizando…");
+  const urls=[S.g.url].concat(ALT_URLS.filter(u=>u!==S.g.url)); let mejor=null;
+  for(const u of urls){ let jj=null;
+    try{const rr=await fetch(u+(u.includes("?")?"&":"?")+"k="+encodeURIComponent(CLAVE)); try{jj=await rr.json();}catch(e){diag=diag||"html";continue;}}
+    catch(e){diag="red";continue;}
+    if(jj.auth===true||jj.error==="clave"){j=jj;if(u!==S.g.url){S.g.url=u;persist();}break;}
+    if(!mejor){mejor=jj;}
+  }
+  if(!j) j=mejor;
+  if(!j){setSync("err",diag==="html"?"El Apps Script respondió con error":"Sin conexión con Drive");return false;}
   diag="";
   try{
     if(j.error==="clave"||j.auth!==true){claveMala=true;viejo=j.auth!==true&&j.error!=="clave";S.ok="";persist();setSync("err",viejo?"Apps Script sin actualizar":"Clave incorrecta");render();return false;}
