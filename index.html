@@ -216,6 +216,11 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .sent-l{margin-top:10px;font-size:12.5px;color:var(--mute)}
 .sent-l b{color:var(--ink2)}
 .lk{border:0;background:none;padding:0;color:var(--wine);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer}
+
+.ask.big{bottom:50%;transform:translate(-50%,50%);width:440px}
+.ask.big.on{transform:translate(-50%,50%)}
+.dq{display:flex;flex-direction:column;gap:10px;width:100%;padding:6px 6px 6px 0}
+.dqb{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -268,6 +273,8 @@ const META = 10;
 const KEY = "mision-emprende-v8";
 const ST = {pend:"Pendiente",port:"Portafolio pedido",rec:"Portafolio recibido",env:"Correo enviado",conf:"Confirmado",nores:"Sin respuesta",decl:"No participa",nq:"No quedó"};
 const FUERA = ["decl","nq"];
+const MOTIVOS = ["Ya hay muchos de la misma categoría (postres / alimentos)","El producto no es diferenciador","No tiene productos listos para exhibir","Trabaja bajo pedido","Sin persona de apoyo para el stand","No cumple lineamientos de SST","Otro motivo"];
+const esPostre=d=>d.food&&/postre|pastel|repost|cheesecake|torta|dulce|chocolat|bomb[oó]n|cuchareable|brownie|galleta|merengu|helad/i.test((d.desc||"")+" "+d.emp);
 const DEF = {
  subj:"Feria de Emprendimiento TP 2026 | {emprendimiento} fue preseleccionado",
  mail:`Hola {nombre},
@@ -454,6 +461,21 @@ function downloadPDF(d){ try{buildPDF(d).save(pdfName(d));return true;}catch(e){
 const mailSent=r=>!!r.msent||["env","nores"].includes(r.st);
 const waSent=r=>!!r.sent;
 function sendMail(d){ askSent(d,"mail"); }
+function discard(d,after){
+  const q=$("ask"), r=R(d);
+  q.innerHTML=`<div class="dq"><div><b>¿Por qué no quedó ${esc(nice(d.emp))}?</b></div>
+    <select id="dqm" class="sel">${MOTIVOS.map(m=>`<option ${r.motivo&&r.motivo.startsWith(m)?"selected":""}>${m}</option>`).join("")}</select>
+    <input id="dqt" class="sel" placeholder="Detalle (opcional)" value="${esc(r.motivoDet||"")}">
+    <div class="dqb"><button class="btn" id="dqn">Cancelar</button><button class="btn wine" id="dqy">Descartar</button></div></div>`;
+  q.classList.add("on","big"); setTimeout(()=>$("dqm").focus(),50);
+  $("dqn").onclick=()=>q.classList.remove("on","big");
+  $("dqy").onclick=()=>{const m=$("dqm").value, t=$("dqt").value.trim();
+    if(m==="Otro motivo"&&!t){toast("Escribe el motivo");$("dqt").focus();return;}
+    setR(d.id,"motivo",m==="Otro motivo"?t:m); setR(d.id,"motivoDet",m==="Otro motivo"?"":t); setR(d.id,"st","nq");
+    q.classList.remove("on","big"); if(after)after(); else render();
+    toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);};
+}
+const motivoTxt=r=>r.motivo?(r.motivo+(r.motivoDet?` (${r.motivoDet})`:"")):"sin motivo registrado";
 function markSent(d,kind){
   if(kind==="mail"){ setR(d.id,"msent",true); if(["pend","port","rec"].includes(R(d).st)) setR(d.id,"st","env"); }
   else { setR(d.id,"sent",true); if(R(d).st==="pend") setR(d.id,"st","port"); }
@@ -515,7 +537,7 @@ function render(){
   $("list").querySelectorAll(".row").forEach(el=>el.onclick=e=>{if(e.target.closest("a,button,select"))return;openRow(+el.dataset.id);});
   $("list").querySelectorAll("[data-send]").forEach(a=>a.addEventListener("click",()=>sendMail(DATA.find(x=>x.id==a.dataset.send))));
   $("list").querySelectorAll("[data-wa]").forEach(a=>a.addEventListener("click",()=>askSent(DATA.find(x=>x.id==a.dataset.wa),"wa")));
-  $("list").querySelectorAll("[data-nq]").forEach(b=>b.onclick=()=>{const id=+b.dataset.nq;const d=DATA.find(x=>x.id===id);setR(id,"st","nq");render();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);});
+  $("list").querySelectorAll("[data-nq]").forEach(b=>b.onclick=()=>discard(DATA.find(x=>x.id===+b.dataset.nq)));
   $("list").querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{setR(+b.dataset.back,"st","pend");render();toast("Lo volviste a tener en cuenta");});
   $("list").querySelectorAll("select[data-st]").forEach(s=>s.onchange=()=>{setR(+s.dataset.st,"st",s.value);render();});
 }
@@ -524,7 +546,7 @@ function row(d,n,why){
   const r=R(d),ap=r.apoyo.trim();
   return `<div class="row" data-id="${d.id}">
    <div class="rk">${String(n).padStart(2,"0")}</div>
-   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${FUERA.includes(r.st)?`<span class="why">${r.st==="nq"?"Lo descartaron: no quedó":"No va a participar"}</span>`:d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
+   <div class="e"><div class="av">${esc(ini(d.emp))}</div><div style="min-width:0"><b>${esc(nice(d.emp))}</b><span>${esc(d.nombre)} · ${esc(d.sub)}</span>${d.red?`<a class="lnk" href="${esc(d.red)}" target="_blank" rel="noopener">${esc(d.redtxt||"Ver página")}</a>`:(d.redtxt?`<span class="lnk off">${esc(d.redtxt)}</span>`:"")}${FUERA.includes(r.st)?`<span class="why">${r.st==="nq"?`No quedó: ${esc(motivoTxt(r))}`:"No va a participar"}</span>`:d.nota?`<span class="why">${esc(d.nota)}</span>`:(why?`<span class="why">${esc(WHY[d.tier]||"")}</span>`:"")}</div></div>
    <div class="ap ${ap?"":"no"}"><small>Atiende el stand</small><div>${ap?esc(ap):"Falta persona de apoyo"}</div></div>
    <div class="st">${stSel(d)}</div>
    <div class="acts">
@@ -558,7 +580,7 @@ function openRow(id){
      <div class="blk"><h4>Correo <button id="restore" style="${r.custom?"":"display:none"}">Volver a la plantilla</button></h4>
        <div class="fl"><textarea class="mail" id="dmail">${esc(mailText(d))}</textarea></div>
        <div class="hint"><span><b>Así se envía:</b> toca <b>Enviar correo</b> y se abre ${mailerName()} con el correo ya escrito, con los datos que tenemos y el formulario para responder. Si editas el texto aquí, cambia solo para esta persona.</span></div></div>
-     ${!FUERA.includes(r.st)?`<div class="blk"><button class="btn" id="dnq" style="width:100%;height:42px">${IC.x}No quedó · sacarlo de los seleccionados</button></div>`:`<div class="blk"><button class="btn" id="dback" style="width:100%;height:42px">↺ Volver a tenerlo en cuenta</button></div>`}
+     ${!FUERA.includes(r.st)?`<div class="blk"><button class="btn" id="dnq" style="width:100%;height:42px">${IC.x}No quedó · sacarlo de los seleccionados</button></div>`:`<div class="blk">${r.st==="nq"?`<div class="nota" style="margin-bottom:10px">No quedó: ${esc(motivoTxt(r))} · <button class="lk" id="dmot">cambiar motivo</button></div>`:""}<button class="btn" id="dback" style="width:100%;height:42px">↺ Volver a tenerlo en cuenta</button></div>`}
      ${d.manual?`<div class="blk"><button class="btn" id="delman" style="width:100%;height:40px;color:var(--wine)">Quitar este emprendimiento agregado</button></div>`:""}
      <div class="blk"><h4>¿No ha respondido?</h4><div class="rem">
        <a class="btn" id="rwa" target="_blank" rel="noopener">${IC.wa}Recordar por WhatsApp</a>
@@ -578,7 +600,8 @@ function openRow(id){
   if($("dsend"))$("dsend").onclick=()=>sendMail(d);
   if($("unwa"))$("unwa").onclick=()=>{setR(id,"sent",false);if(S.r[id].st==="port")setR(id,"st","pend");openRow(id);};
   if($("unmail"))$("unmail").onclick=()=>{setR(id,"msent",false);if(["env","nores"].includes(S.r[id].st))setR(id,"st","pend");openRow(id);};
-  if($("dnq"))$("dnq").onclick=()=>{setR(id,"st","nq");close();toast(`${nice(d.emp)} no quedó · entró el siguiente de la lista`,3500);};
+  if($("dnq"))$("dnq").onclick=()=>discard(d,close);
+  if($("dmot"))$("dmot").onclick=()=>discard(d,()=>openRow(id));
   if($("dback"))$("dback").onclick=()=>{setR(id,"st","pend");close();toast("Lo volviste a tener en cuenta");};
   if($("delman"))$("delman").onclick=()=>{if($("delman").dataset.ok){confirmDel(id);}else{$("delman").dataset.ok=1;$("delman").textContent="Toca otra vez para confirmar";}};
   $("dwa").onclick=()=>askSent(d,"wa");
@@ -708,24 +731,49 @@ $("tplBtn").onclick=()=>{
 
 /* ---------- Isa (per site) ---------- */
 const siteConf=s=>lists(s).all.filter(d=>R(d).st==="conf");
+function siteSets(s){
+  const {sel,all}=lists(s);
+  return {sel, conf:all.filter(d=>R(d).st==="conf"), pend:sel.filter(d=>R(d).st!=="conf"), nq:all.filter(d=>R(d).st==="nq"), decl:all.filter(d=>R(d).st==="decl")};
+}
 function excelSite(s){
-  const rows=siteConf(s).map(d=>{const r=R(d);return {"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Celular":d.tel,"Correo":d.email,"Productos para exhibir":r.stock||"","Campaña":r.camp,"Horario":r.hor,"Acompañante (atiende el stand)":r.apoyo,"Celular acompañante":r.atel,"Parentesco":r.paren,"Correcciones":r.corr};});
-  if(!rows.length){toast(`Aún no hay confirmados en ${s}`);return;}
-  const name=`Feria_TP_2026_Confirmados_${s.replace(/\s/g,"")}`;
-  if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]||"").length))+2}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,s);XLSX.writeFile(wb,name+".xlsx");}
-  else{const k=Object.keys(rows[0]);const csv="\ufeff"+[k].concat(rows.map(r=>k.map(x=>r[x]))).map(x=>x.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=name+".csv";a.click();}
+  const {conf,pend,nq,decl}=siteSets(s);
+  const ficha=d=>{const r=R(d);return {"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Celular":d.tel,"Correo":d.email,"Estado":ST[r.st],"Productos para exhibir":r.stock||"","Campaña":r.camp,"Horario":r.hor,"Acompañante (atiende el stand)":r.apoyo,"Celular acompañante":r.atel,"Parentesco":r.paren,"Correcciones":r.corr};};
+  const hojas=[["Confirmados",conf.map(ficha)],["En proceso",pend.map(ficha)],["No quedaron",nq.map(d=>({"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Motivo":motivoTxt(R(d))})).concat(decl.map(d=>({"Emprendimiento":nice(d.emp),"Categoría":d.sub,"Colaborador":d.nombre,"Motivo":"No va a participar"})))]].filter(h=>h[1].length);
+  if(!hojas.length){toast(`Aún no hay información para reportar en ${s}`);return;}
+  const name=`Feria_TP_2026_${s.replace(/\s/g,"")}`;
+  if(window.XLSX){const wb=XLSX.utils.book_new();hojas.forEach(([n,rows])=>{const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]).map(k=>({wch:Math.min(60,Math.max(k.length,...rows.map(r=>String(r[k]||"").length))+2)}));XLSX.utils.book_append_sheet(wb,ws,n);});XLSX.writeFile(wb,name+".xlsx");}
+  else{const rows=hojas.flatMap(([n,r])=>r.map(x=>Object.assign({"Lista":n},x)));const k=[...new Set(rows.flatMap(Object.keys))];const csv="﻿"+[k].concat(rows.map(r=>k.map(x=>r[x]))).map(x=>x.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\n");const a2=document.createElement("a");a2.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a2.download=name+".csv";a2.click();}
+}
+function resumen(s){
+  const {sel,nq,decl}=siteSets(s), out=[];
+  const food=sel.filter(d=>d.food), post=sel.filter(esPostre);
+  if(food.length) out.push(`De los ${sel.length} emprendimientos seleccionados, ${food.length} ${food.length===1?"es":"son"} de alimentos${post.length?` (${post.length} de postres)`:""}.`);
+  const cats={}; sel.forEach(d=>cats[d.sub]=(cats[d.sub]||0)+1); const top=Object.entries(cats).sort((x,y)=>y[1]-x[1])[0];
+  if(top&&top[1]>=3) out.push(`La categoría con más emprendimientos es ${top[0].toLowerCase()} (${top[1]}).`);
+  if(nq.length){const m={};nq.forEach(d=>{const k=R(d).motivo||"sin motivo";m[k]=(m[k]||0)+1;});const tm=Object.entries(m).sort((x,y)=>y[1]-x[1])[0];
+    out.push(tm[1]>1?`${nq.length} emprendimientos no quedaron; el motivo más frecuente fue: ${tm[0].charAt(0).toLowerCase()+tm[0].slice(1)} (${tm[1]}).`:`${nq.length} ${nq.length===1?"emprendimiento no quedó":"emprendimientos no quedaron"} (los motivos están en la lista de arriba).`);}
+  if(decl.length) out.push(`${decl.length} ${decl.length===1?"emprendedor indicó":"emprendedores indicaron"} que no va${decl.length===1?"":"n"} a participar.`);
+  if(sel.length<META) out.push(`Por ahora solo hay ${sel.length} de ${META} cupos con opciones disponibles.`);
+  return out;
 }
 function isaText(s){
-  const L=siteConf(s), who=C(s).resp;
-  const lines=L.map((d,i)=>`${i+1}. ${nice(d.emp)} · ${d.nombre}${R(d).apoyo?` (atiende: ${R(d).apoyo})`:""}`).join("\n");
-  return `Hola Isa, ¿cómo estás?\n\nTe confirmamos que ya contactamos a los emprendimientos preseleccionados del site ${s}. Te compartimos el Excel con ${L.length===1?"el emprendimiento que ya nos confirmó":`los ${L.length} emprendimientos que ya nos confirmaron`} su participación:\n\n${lines||"(aún no hay confirmados)"}\n\nQuedamos atentas a los horarios y a la fecha en que se realizará la feria para continuar con la organización.\n\n¡Gracias!`;
+  const {conf,pend,nq}=siteSets(s);
+  const L=[];
+  L.push("Hola Isa, ¿cómo estás?","",`Te compartimos el avance de los emprendimientos del site ${s}. Adjuntamos el Excel con el detalle.`,"");
+  L.push(`Confirmados (${conf.length}):`); L.push(conf.length?conf.map((d,i)=>`${i+1}. ${nice(d.emp)} · ${d.nombre}${R(d).apoyo?` (atiende: ${R(d).apoyo})`:""}`).join("\n"):"Aún no hay confirmados.");
+  if(pend.length){L.push("",`En proceso (${pend.length}):`,pend.map(d=>`- ${nice(d.emp)} · ${ST[R(d).st].toLowerCase()}`).join("\n"));}
+  if(nq.length){L.push("",`No quedaron (${nq.length}):`,nq.map(d=>`- ${nice(d.emp)} (${d.sub.toLowerCase()}): ${motivoTxt(R(d))}`).join("\n"));}
+  const res=resumen(s); if(res.length){L.push("","Resumen:",res.map(x=>`- ${x}`).join("\n"));}
+  L.push("","Quedamos atentas a los horarios y a la fecha en que se realizará la feria para continuar con la organización.","","¡Gracias!");
+  return L.join("\n");
 }
-const isaSubj=s=>`Feria de Emprendimiento TP 2026 | Emprendimientos confirmados ${s}`;
+const isaSubj=s=>`Feria de Emprendimiento TP 2026 | Avance de emprendimientos ${s}`;
 $("isaBtn").onclick=()=>{
   const s=site, L=siteConf(s);
-  open(`<div class="dh"><div class="lb">Site ${esc(s)}</div><h3>Reporte para Isa</h3><p>${L.length} ${L.length===1?"emprendimiento confirmado":"emprendimientos confirmados"}</p><button class="ic x">${IC.x}</button></div>
+  open(`<div class="dh"><div class="lb">Site ${esc(s)}</div><h3>Reporte para Isa</h3><p>Confirmados, en proceso, descartados y resumen</p><button class="ic x">${IC.x}</button></div>
    <div class="db">
-     <div class="blk"><h4>Confirmados</h4>${L.length?`<ul class="okl">${L.map(d=>`<li><b style="font-weight:600">${esc(nice(d.emp))}</b><span>${esc(R(d).apoyo||"sin persona de apoyo")}</span></li>`).join("")}</ul>`:`<div class="note">Cambia a "Confirmado" el estado de los emprendimientos que ya respondieron.</div>`}</div>
+     <div class="blk"><h4>Resumen automático</h4>${resumen(s).length?`<ul class="okl">${resumen(s).map(x=>`<li><span style="color:var(--ink2)">${esc(x)}</span></li>`).join("")}</ul>`:`<div class="note">Aún no hay datos para resumir.</div>`}</div>
+     <div class="blk"><h4>No quedaron</h4>${siteSets(s).nq.length?`<ul class="okl">${siteSets(s).nq.map(d=>`<li><b style="font-weight:600">${esc(nice(d.emp))}</b><span>${esc(motivoTxt(R(d)))}</span></li>`).join("")}</ul>`:`<div class="note">Ninguno descartado.</div>`}</div>
      <div class="blk"><h4>Para</h4><div class="fl"><input id="isato" value="${esc(S.g.isa||"")}" placeholder="Correo de Isa"></div></div>
      <div class="blk"><h4>Correo</h4><div class="fl"><input id="isas" value="${esc(isaSubj(s))}" style="margin-bottom:8px;font-weight:600"></div><div class="fl"><textarea class="mail" id="isab">${esc(isaText(s))}</textarea></div>
        <div class="note" style="margin-top:6px">Descarga el Excel y adjúntalo al correo antes de enviarlo.</div></div>
@@ -762,9 +810,9 @@ $("addBtn").onclick=openAdd;
 let syncT=null, syncing=false;
 function setSync(cls,txt){const b=$("syncBtn");b.className="sync "+cls;$("syncTxt").textContent=txt;}
 function table(){
-  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Nota","Productos para exhibir","Campaña","Horario","Acompañante (atiende el stand)","Celular acompañante","Parentesco","Correcciones","Estado","WhatsApp enviado","Correo enviado","ID"];
+  const H=["Site","#","Emprendimiento","Colaborador","Celular","Correo","Categoría","Nota","Productos para exhibir","Campaña","Horario","Acompañante (atiende el stand)","Celular acompañante","Parentesco","Correcciones","Estado","WhatsApp enviado","Correo enviado","ID","Motivo descarte"];
   const rows=[H];
-  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,d.nota||"",r.stock||"",r.camp,r.hor,r.apoyo,r.atel,r.paren,r.corr,ST[r.st],r.sent?"Sí":"",mailSent(r)?"Sí":"",String(d.id)]);});});
+  SITES.forEach(s=>{const {sel,more}=lists(s);sel.concat(more).forEach((d,i)=>{const r=R(d);rows.push([s,i+1,nice(d.emp),d.nombre,d.tel,d.email,d.sub,d.nota||"",r.stock||"",r.camp,r.hor,r.apoyo,r.atel,r.paren,r.corr,ST[r.st],r.sent?"Sí":"",mailSent(r)?"Sí":"",String(d.id),r.st==="nq"?motivoTxt(r):""]);});});
   return rows;
 }
 function merge(resp){
