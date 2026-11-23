@@ -601,8 +601,8 @@ $("tplBtn").onclick=()=>{
      <div class="blk"><h4>Datos del site</h4><div class="g2"><div class="fl"><label>Fechas de la feria</label><input id="t_fecha" value="${esc(c.fecha)}" placeholder="Por confirmar"></div><div class="fl"><label>Plazo para responder</label><input id="t_lim" value="${esc(c.lim)}"></div></div>
        <div class="fl" style="margin-top:10px"><label>Nombre de quien envía (WhatsApp y ficha PDF)</label><input id="t_resp" value="${esc(c.resp)}"></div></div>
      <div class="blk"><h4>Asunto</h4><div class="fl"><input id="t_subj" value="${esc(c.subj)}"></div></div>
-     <div class="blk"><h4>Correo</h4><div class="fl"><textarea class="mail" id="t_mail">${esc(c.mail)}</textarea></div></div>
-     <div class="blk"><h4>Vista previa <span id="pvn" style="text-transform:none;letter-spacing:0;font-weight:500"></span></h4><div class="fl"><textarea id="tprev" readonly style="min-height:300px;background:var(--t3)"></textarea></div></div>
+     <div class="blk"><h4>Correo · escribe aquí para cambiarlo</h4><div class="fl"><textarea class="mail" id="t_mail">${esc(c.mail)}</textarea></div></div>
+     <div class="blk"><h4>Vista previa · solo lectura <span id="pvn" style="text-transform:none;letter-spacing:0;font-weight:500"></span></h4><div class="fl"><textarea id="tprev" readonly style="min-height:300px;background:var(--t3)"></textarea></div></div>
      <div class="blk"><h4>Aviso por WhatsApp</h4><div class="fl"><textarea id="t_wa" rows="8">${esc(c.wa)}</textarea></div></div>
      <div class="blk"><h4>Recordatorio por WhatsApp</h4><div class="fl"><textarea id="t_rwa" rows="7">${esc(c.rwa)}</textarea></div></div>
      <div class="blk"><h4>Recordatorio por correo</h4><div class="note" style="margin-bottom:8px">Se envía como respuesta dentro de la misma conversación, así que no lleva asunto.</div><div class="fl"><textarea id="t_rmail" rows="9">${esc(c.rmail)}</textarea></div></div>
