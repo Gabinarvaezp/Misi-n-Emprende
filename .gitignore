@@ -1,0 +1,4 @@
+# Los datos de los colaboradores nunca se suben al repositorio
+*.json
+*.xlsx
+*.csv
